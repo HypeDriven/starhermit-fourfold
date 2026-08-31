@@ -1,0 +1,6 @@
+name=Fourfold
+launch=index.html
+server=server.js
+version=1.0.0
+rulesVersion=1
+contentVersion=1

@@ -1,0 +1,92 @@
+[
+  {
+    "name": "disc-drop-a",
+    "seconds": 1,
+    "prompt": "A light wooden game disc falls down a vertical plastic slot and lands with a single soft clack.",
+    "event": "drop"
+  },
+  {
+    "name": "disc-drop-b",
+    "seconds": 1,
+    "prompt": "A checker piece drops into a connect-four style board and settles with a short hollow plastic knock.",
+    "event": "drop"
+  },
+  {
+    "name": "disc-drop-c",
+    "seconds": 1,
+    "prompt": "A small resin disc slides down a chute and taps the stack of discs below with a muted woody tick.",
+    "event": "drop"
+  },
+  {
+    "name": "line-win",
+    "seconds": 3,
+    "prompt": "A bright ascending chime of four struck metal bars, a celebratory game win jingle with a short shimmering tail.",
+    "event": "win"
+  },
+  {
+    "name": "board-draw",
+    "seconds": 2,
+    "prompt": "Two soft wooden blocks knocked together twice, a neutral even-match draw signal, dry and short.",
+    "event": "draw"
+  },
+  {
+    "name": "move-limit-bell",
+    "seconds": 2,
+    "prompt": "A small brass desk bell rung once, then a lower wooden tok, signaling a move budget has run out.",
+    "event": "move-limit"
+  },
+  {
+    "name": "resign-fold",
+    "seconds": 2,
+    "prompt": "A soft cloth game mat being folded with a low flap and a single descending muted piano note.",
+    "event": "resigned"
+  },
+  {
+    "name": "time-up-tick",
+    "seconds": 2,
+    "prompt": "A mechanical timer ticking twice quickly, then a small spring buzz as the clock runs out.",
+    "event": "time-up"
+  },
+  {
+    "name": "column-full-thud",
+    "seconds": 1,
+    "prompt": "A game disc bumped against the top of an already full column, a dull rubbery thud for a rejected move.",
+    "event": "column-full"
+  },
+  {
+    "name": "bad-column-knock",
+    "seconds": 1,
+    "prompt": "A single short hollow knock on the plastic edge of a game board, indicating an invalid column choice.",
+    "event": "bad-column"
+  },
+  {
+    "name": "banned-column-rattle",
+    "seconds": 1,
+    "prompt": "A quick rattle of a small plastic gate being blocked, three rapid clicks for a forbidden column.",
+    "event": "banned-column"
+  },
+  {
+    "name": "out-of-turn-tap",
+    "seconds": 1,
+    "prompt": "Two light fingertip taps on a wooden table, a gentle not-your-turn warning.",
+    "event": "out-of-turn"
+  },
+  {
+    "name": "game-ended-dull",
+    "seconds": 1,
+    "prompt": "A soft muted drum thump with a short low decay, signaling the game has already ended.",
+    "event": "game-ended"
+  },
+  {
+    "name": "unknown-command-buzz",
+    "seconds": 1,
+    "prompt": "A short low electric buzz like a quiz-show wrong-answer buzzer, half a second long.",
+    "event": "unknown-command"
+  },
+  {
+    "name": "malformed-command-click",
+    "seconds": 1,
+    "prompt": "A single dry mechanical switch click followed by a faint plastic snap, a rejected input.",
+    "event": "malformed-command"
+  }
+]

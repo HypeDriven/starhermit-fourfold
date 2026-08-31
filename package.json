@@ -1,0 +1,11 @@
+{
+  "name": "fourfold",
+  "version": "1.0.0",
+  "description": "Fourfold — a 7-column connect-four-style game.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

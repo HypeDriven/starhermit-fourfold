@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fourfold</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0e1424; color: #e8ecf5; line-height: 1.5;
+    display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px;
+  }
+  .wrap { width: 100%; max-width: 980px; margin: auto; }
+  h1 { font-size: clamp(24px, 5vw, 34px); text-align: center; letter-spacing: .06em; padding-bottom: 10px; color:#fff;}
+  canvas#board { display:block; width:100%; height:auto; background:#0a0f1e; border-radius:8px; }
+  .panel { margin-top:14px; font-size: clamp(15px,2.6vw,17px); text-align:center;}
+</style>
+<script src="/js/rng.js"></script>
+<script src="/js/rules.js"></script>
+<script src="/js/content.js"></script>
+<script src="/js/ai.js"></script>
+<script src="/js/sfx.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fourfold</h1>
+  <canvas id="board" width="700" height="600"></canvas>
+  <div class="panel" aria-live="polite"><span id="status">Loading…</span></div>
+</div>
+<script type="module">
+import * as THREE from './vendor/three.module.min.js';
+
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+const statusEl = document.getElementById('status');
+
+function drawBoard(cols, rows) {
+  const w = cols * 60;
+  const h = rows * 60;
+  ctx.clearRect(0,0,w,h);
+}
+
+window.addEventListener('load', function () {
+  try {
+    if (typeof FFRules !== 'undefined') statusEl.textContent = 'ready';
+    else throw new Error('missing rules');
+  } catch (e) {
+    statusEl.textContent = String(e.message || e);
+  }
+});
+
+window.__ffReady = true;
+</script>
+</body>
+</html>
