@@ -1,11 +1,15 @@
 {
   "name": "fourfold",
   "version": "1.0.0",
-  "description": "Fourfold — a 7-column connect-four-style game.",
+  "description": "Fourfold \u2014 a 7-column connect-four-style game.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test:e2e": "node tests/e2e.mjs"
   },
-  "license": "UNLICENSED",
-  "private": true
+  "license": "SEE LICENSE IN LICENSE.md",
+  "private": true,
+  "devDependencies": {
+    "playwright-core": "^1.62.1"
+  }
 }

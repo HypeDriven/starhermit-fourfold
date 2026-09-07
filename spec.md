@@ -1,10 +1,10 @@
 # Fourfold — Product and Game Specification
 
-**Document status:** design specification only; no implementation is included.  
-**Game index:** 77  
-**Genre:** Turn-based alignment game  
-**Players:** 2–4 players depending on ruleset, plus practice AI  
-**Targets:** desktop browsers, mobile browsers, landscape and portrait where practical  
+**Document status:** design specification. A single-player-plus-AI browser implementation now ships alongside it; see "Implementation status" below for what is built and what remains design-only.
+**Game index:** 77
+**Genre:** Turn-based alignment game
+**Players:** 2–4 players depending on ruleset, plus practice AI
+**Targets:** desktop browsers, mobile browsers, landscape and portrait where practical
 **Rendering direction:** Three.js-first presentation with a fully usable semantic HTML interface layer
 
 ## 1. Product vision
@@ -260,3 +260,11 @@ Success targets for the first public test: median first-play time under 20 secon
 This specification is ready for implementation when rules examples, content schema, wireframes for all responsive breakpoints, visual target frames, accessibility annotations, authoritative message schema, achievement definitions, leaderboard definitions, and performance test devices are approved.
 
 This document does **not** authorize implementation, asset production, monetization work, native wrappers, real-money systems, or copying any existing product. The initial build should favor one excellent core loop and a coherent original visual identity over feature breadth.
+
+## 11. Implementation status
+
+This section records what the shipped browser build actually does, so the sections above stay readable as the design target rather than a description of the product.
+
+**Built.** Local single-device play against a deterministic practice AI (four levels) or a second player passing one device. Journey (42 authored stages with stars and mastery gates), seven challenges (including a 9x7 connect-five board and a three-player table), a daily board derived from the UTC date, and six tutorial lessons. Title, mode-setup, play, pause, results, settings, and help screens. Pointer, touch, and full keyboard control (arrows plus Enter, number keys, and U/H/R/P/Esc), with the column targets exposed as real focusable buttons and the board mirrored as text for assistive tech. Undo, hints, resign, restart, pause on tab-hide, and a resumable saved game. Settings for volume, mute, reduced motion, high contrast, and larger text, persisted in `localStorage`. Board presentation is a Three.js orthographic scene with a 2D-canvas fallback that keeps the game playable when WebGL is unavailable.
+
+**Not built.** Everything requiring a backend or a second connected player: hosted/authoritative sessions, lobbies, matchmaking, presence, chat, voice, invitations, leaderboards, cloud saves, account sign-in, telemetry, and the StarHermit REST/WebSocket integration described in section 6. Gamepad input, camera framing controls, and post-processing quality tiers are also unimplemented. Progress is stored only in the local browser and is not synchronized anywhere.

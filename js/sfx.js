@@ -199,13 +199,15 @@
     synth(event);
   }
 
+  // Dispatch the events array produced by FFRules.applyCommand/place.
+  function playEvents(events) {
+    if (!events) return;
+    for (var i = 0; i < events.length; i++) play(events[i] && events[i].t);
+  }
+
   root.FFSfx = {
     play: play,
-    // Dispatch the events array produced by FFRules.applyCommand/place.
-    playEvents: function (events) {
-      if (!events) return;
-      for (var i = 0; i < events.length; i++) play(events[i] && events[i].t);
-    },
+    playEvents: playEvents,
     // Dispatch a full applyCommand result: result events on success,
     // the invalid-reason string on failure.
     playResult: function (res) {

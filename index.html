@@ -2,58 +2,208 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Fourfold — drop discs into seven columns and make a line of four before your rival.">
 <title>Fourfold</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<style>
-  :root { color-scheme: dark; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
-  body {
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: #0e1424; color: #e8ecf5; line-height: 1.5;
-    display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px;
-  }
-  .wrap { width: 100%; max-width: 980px; margin: auto; }
-  h1 { font-size: clamp(24px, 5vw, 34px); text-align: center; letter-spacing: .06em; padding-bottom: 10px; color:#fff;}
-  canvas#board { display:block; width:100%; height:auto; background:#0a0f1e; border-radius:8px; }
-  .panel { margin-top:14px; font-size: clamp(15px,2.6vw,17px); text-align:center;}
-</style>
-<script src="/js/rng.js"></script>
-<script src="/js/rules.js"></script>
-<script src="/js/content.js"></script>
-<script src="/js/ai.js"></script>
-<script src="/js/sfx.js"></script>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/rng.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/content.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/ui.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <h1>Fourfold</h1>
-  <canvas id="board" width="700" height="600"></canvas>
-  <div class="panel" aria-live="polite"><span id="status">Loading…</span></div>
+
+<header class="app-header">
+  <h1><span class="mark">▮</span> Fourfold</h1>
+  <button type="button" class="icon ghost" data-goto="help" aria-label="Help and rules">?</button>
+  <button type="button" class="icon ghost" data-goto="settings" aria-label="Settings">⚙</button>
+</header>
+
+<main>
+
+  <!-- ---------- title ---------- -->
+  <section class="screen active" id="screen-title" aria-labelledby="title-h">
+    <div class="inner">
+      <h2 id="title-h">Make four in a row</h2>
+      <p class="lede">Drop a disc into a column; it falls to the lowest free cell. The first
+        player to line up four — across, up, or diagonally — wins the board.</p>
+      <p class="status-line" id="title-stats"></p>
+      <div class="menu">
+        <button type="button" class="primary wide" id="btn-resume" hidden>Resume</button>
+        <button type="button" class="primary wide" data-goto="practice">Play</button>
+      </div>
+      <div class="menu cols">
+        <button type="button" class="card" data-goto="journey">
+          <span class="title">Journey</span><span class="sub">42 authored stages, stars and mastery gates</span>
+        </button>
+        <button type="button" class="card" id="btn-daily">
+          <span class="title">Daily board</span><span class="sub">One shared ruleset per day</span>
+        </button>
+        <button type="button" class="card" data-goto="challenges">
+          <span class="title">Challenges</span><span class="sub">Taller grids, five in a row, three players</span>
+        </button>
+        <button type="button" class="card" data-goto="learn">
+          <span class="title">Learn</span><span class="sub">Six short lessons</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- mode setup screens ---------- -->
+  <section class="screen" id="screen-practice" aria-labelledby="practice-h">
+    <div class="inner">
+      <h2 id="practice-h">Play</h2>
+      <p class="lede">Pick an opponent. Undo and hints are available; nothing here is ranked.</p>
+      <div class="menu" id="practice-list"></div>
+      <div class="row"><button type="button" class="ghost" data-goto="title">Back</button></div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-journey" aria-labelledby="journey-h">
+    <div class="inner">
+      <h2 id="journey-h">Journey</h2>
+      <p class="lede">Stars come from winning and from winning under par. Mastery stages
+        (outlined) must be won before the stages after them open.</p>
+      <div class="stage-grid" id="journey-list"></div>
+      <div class="row"><button type="button" class="ghost" data-goto="title">Back</button></div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-challenges" aria-labelledby="challenges-h">
+    <div class="inner">
+      <h2 id="challenges-h">Challenges</h2>
+      <p class="lede">Each challenge states its rules and assists before you commit.</p>
+      <div class="menu" id="challenge-list"></div>
+      <div class="row"><button type="button" class="ghost" data-goto="title">Back</button></div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-learn" aria-labelledby="learn-h">
+    <div class="inner">
+      <h2 id="learn-h">Learn</h2>
+      <p class="lede">Short lessons, replayable at any time.</p>
+      <div class="menu" id="learn-list"></div>
+      <div class="row"><button type="button" class="ghost" data-goto="title">Back</button></div>
+    </div>
+  </section>
+
+  <!-- ---------- play ---------- -->
+  <section class="screen" id="screen-play" aria-labelledby="play-h">
+    <div class="inner">
+      <h2 id="play-h" class="sr-only">Board</h2>
+      <div class="hud">
+        <span class="turn"><span class="chip" id="turn-chip" aria-hidden="true"></span>
+          <span id="turn-label" aria-live="polite">Your turn</span></span>
+        <span class="meta" id="hud-meta"></span>
+        <span class="objective" id="hud-objective"></span>
+      </div>
+
+      <div class="board-region">
+        <canvas id="board" role="img" aria-label="Fourfold board"></canvas>
+        <div class="col-layer" id="col-layer" role="group" aria-label="Columns — choose one to drop a disc"></div>
+      </div>
+
+      <p class="sr-only" id="grid-mirror" aria-live="off"></p>
+      <p class="status-line" id="play-status" role="status" aria-live="polite"></p>
+
+      <div class="tray">
+        <button type="button" id="btn-undo">Undo <span aria-hidden="true">(U)</span></button>
+        <button type="button" id="btn-hint">Hint <span aria-hidden="true">(H)</span></button>
+        <button type="button" id="btn-restart">Restart <span aria-hidden="true">(R)</span></button>
+        <button type="button" id="btn-pause">Pause <span aria-hidden="true">(P)</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- settings ---------- -->
+  <section class="screen" id="screen-settings" aria-labelledby="settings-h">
+    <div class="inner">
+      <h2 id="settings-h">Settings</h2>
+      <fieldset>
+        <legend>Audio</legend>
+        <label class="slider" for="set-volume">Effects volume
+          <input type="range" id="set-volume" min="0" max="100" step="5"></label>
+        <label class="opt"><input type="checkbox" id="set-muted"> Mute all sound</label>
+      </fieldset>
+      <fieldset>
+        <legend>Accessibility</legend>
+        <label class="opt"><input type="checkbox" id="set-motion"> Reduced motion (no falling animation)</label>
+        <label class="opt"><input type="checkbox" id="set-contrast"> High-contrast palette</label>
+        <label class="opt"><input type="checkbox" id="set-text"> Larger text</label>
+        <p class="status-line">Disc colours are always reinforced by a shape: ● you, ◆ rival, ▲ third, ■ fourth.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Data</legend>
+        <p class="status-line">Progress is stored only in this browser.</p>
+        <button type="button" id="set-reset">Erase progress on this device</button>
+      </fieldset>
+      <div class="row"><button type="button" class="ghost" data-goto="title">Back</button></div>
+    </div>
+  </section>
+
+  <!-- ---------- help ---------- -->
+  <section class="screen" id="screen-help" aria-labelledby="help-h">
+    <div class="inner">
+      <h2 id="help-h">How to play</h2>
+      <p class="lede">Players take turns dropping a disc into a column. Each disc falls to the
+        lowest free cell. The first player with four of their own discs in a straight line —
+        horizontal, vertical, or diagonal — wins. If every cell fills with no line, it is a draw.</p>
+      <fieldset>
+        <legend>Controls</legend>
+        <ul style="padding-left:1.2em">
+          <li>Click or tap a column to drop.</li>
+          <li><b>← →</b> move between columns, <b>Enter</b> or <b>Space</b> drops.</li>
+          <li><b>1–9</b> drop straight into that column number.</li>
+          <li><b>U</b> undo, <b>H</b> hint, <b>R</b> restart, <b>P</b> or <b>Esc</b> pause.</li>
+        </ul>
+      </fieldset>
+      <fieldset>
+        <legend>Scoring</legend>
+        <p>A win is worth 1000. Winning under the stage's par drops adds 25 per drop saved,
+          and beating a par time adds 5 per second saved. A draw is worth 300.</p>
+      </fieldset>
+      <div class="row"><button type="button" class="ghost" data-goto="title">Back</button></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ---------- overlays ---------- -->
+<div class="overlay" id="overlay-pause" role="dialog" aria-modal="true" aria-labelledby="pause-h">
+  <div class="sheet">
+    <h2 id="pause-h">Paused</h2>
+    <button type="button" class="primary" id="pause-resume">Resume</button>
+    <button type="button" id="pause-restart">Restart this board</button>
+    <button type="button" id="pause-settings">Settings</button>
+    <button type="button" id="pause-resign">Resign</button>
+    <button type="button" class="ghost" id="pause-leave">Leave to menu</button>
+  </div>
 </div>
+
+<div class="overlay" id="overlay-results" role="dialog" aria-modal="true" aria-labelledby="res-headline">
+  <div class="sheet">
+    <p class="headline" id="res-headline"></p>
+    <p class="stars" id="res-stars" style="color:var(--p1);letter-spacing:.2em"></p>
+    <dl class="breakdown" id="res-breakdown"></dl>
+    <button type="button" class="primary" id="res-next" hidden>Next</button>
+    <button type="button" id="res-retry">Play again</button>
+    <button type="button" class="ghost" id="res-menu">Back to menu</button>
+  </div>
+</div>
+
 <script type="module">
-import * as THREE from './vendor/three.module.min.js';
-
-const canvas = document.getElementById('board');
-const ctx = canvas.getContext('2d');
-const statusEl = document.getElementById('status');
-
-function drawBoard(cols, rows) {
-  const w = cols * 60;
-  const h = rows * 60;
-  ctx.clearRect(0,0,w,h);
-}
-
-window.addEventListener('load', function () {
+  import { createView } from './js/view3d.js';
   try {
-    if (typeof FFRules !== 'undefined') statusEl.textContent = 'ready';
-    else throw new Error('missing rules');
+    window.FFUI.boot({ createView });
   } catch (e) {
-    statusEl.textContent = String(e.message || e);
+    document.body.insertAdjacentHTML('afterbegin',
+      '<p class="status-line error" style="padding:16px">Fourfold could not start: ' +
+      String(e && e.message || e).replace(/[<&]/g, '') + '</p>');
+    throw e;
   }
-});
-
-window.__ffReady = true;
 </script>
 </body>
 </html>

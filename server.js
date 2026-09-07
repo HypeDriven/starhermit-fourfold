@@ -24,13 +24,19 @@ function send(res, code, body, type) {
 }
 
 const server = http.createServer((req, res) => {
-  const url = req.url.split('?')[0];
+  let url;
+  try { url = decodeURIComponent(req.url.split('?')[0]); }
+  catch (e) { send(res, 400, 'bad request'); return; }
   if (url === '/' ) { send(res, 200, fs.readFileSync(path.join(ROOT, 'index.html')), MIME['.html']); return; }
   if (url === '/api/health') { send(res, 200, JSON.stringify({ ok: true }), MIME['.json']); return; }
-  const file = path.join(ROOT, url);
+
+  // Contain every request under ROOT: path.join alone still resolves "..".
+  const file = path.resolve(ROOT, '.' + path.posix.normalize(url));
+  if (file !== ROOT && !file.startsWith(ROOT + path.sep)) { send(res, 403, 'forbidden'); return; }
+
   fs.readFile(file, (err, data) => {
     if (err) { send(res, 404, 'not found'); return; }
-    const ext = path.extname(url).toLowerCase();
+    const ext = path.extname(file).toLowerCase();
     send(res, 200, data, MIME[ext] || 'application/octet-stream');
   });
 });
