@@ -1,0 +1,22 @@
+# Fourfold — SFX manifest (canonical). One clip per line:
+# file | event id (js/sfx.js EVENT_SAMPLES / js/rules.js event or invalid-reason string) | description of the sound | usage context
+disc-drop-a.opus | drop | A light wooden game disc falls down a vertical plastic slot and lands with a single soft clack. | One of three random variants played for every landed disc (rules event `drop`, player or AI).
+disc-drop-b.opus | drop | A checker piece drops into a connect-four style board and settles with a short hollow plastic knock. | Variant of `drop`.
+disc-drop-c.opus | drop | A small resin disc slides down a chute and taps the stack of discs below with a muted woody tick. | Variant of `drop`.
+line-win.opus | win | A bright ascending chime of four struck metal bars, a celebratory game win jingle with a short shimmering tail. | Rules event `win`: any player completes a line (plays for the rival's line too; the headline colour tells who).
+board-draw.opus | draw | Two soft wooden blocks knocked together twice, a neutral even-match draw signal, dry and short. | Rules event `draw`: every playable cell is full with no line.
+move-limit-bell.opus | move-limit | A small brass desk bell rung once, then a lower wooden tok, signaling a move budget has run out. | Rules event `move-limit`: the local player's drop budget is spent without a line (Twelve Drops, budget journey stages).
+resign-fold.opus | resigned | A soft cloth game mat being folded with a low flap and a single descending muted piano note. | Terminal `resigned`: Pause > Resign.
+time-up-tick.opus | time-up | A mechanical timer ticking twice quickly, then a small spring buzz as the clock runs out. | Terminal `time-up`: a timed board's clock reaches zero (Blitz Ninety, timed journey stages).
+column-full-thud.opus | column-full | A game disc bumped against the top of an already full column, a dull rubbery thud for a rejected move. | Invalid reason `column-full` (only reachable by clicking the canvas over a full column; the button is disabled).
+bad-column-knock.opus | bad-column | A single short hollow knock on the plastic edge of a game board, indicating an invalid column choice. | Invalid reason `bad-column`, and a lesson rejecting a drop outside its glowing column.
+banned-column-rattle.opus | banned-column | A quick rattle of a small plastic gate being blocked, three rapid clicks for a forbidden column. | Invalid reason `banned-column`: the sealed middle column in Off-Center.
+out-of-turn-tap.opus | out-of-turn | Two light fingertip taps on a wooden table, a gentle not-your-turn warning. | Local input while the AI is thinking (`out-of-turn`).
+game-ended-dull.opus | game-ended | A soft muted drum thump with a short low decay, signaling the game has already ended. | Invalid reason `game-ended`: a command after the terminal state.
+unknown-command-buzz.opus | unknown-command | A short low electric buzz like a quiz-show wrong-answer buzzer, half a second long. | Invalid reason `unknown-command` (e.g. `timeout` on an untimed board); not reachable from the UI.
+malformed-command-click.opus | malformed-command | A single dry mechanical switch click followed by a faint plastic snap, a rejected input. | Invalid reason `malformed-command`; not reachable from the UI.
+hint-chime.opus | hint | A single soft glass bell struck once with a gentle upward shimmer, a friendly suggestion cue, short and clean. | Hint (H / Hint button) outlines the suggested column.
+undo-rewind.opus | undo | A small wooden disc sliding quickly back up a plastic slot with a short reversed whoosh and a faint click at the end. | Undo (U / Undo button) rewinds to the local player's last turn.
+lesson-complete.opus | lesson-complete | Two warm marimba notes rising a fifth followed by a soft wooden tap, a small lesson-finished acknowledgement. | A Learn lesson's goal is met (drop-any / stack); win-goal lessons play `win` instead.
+clock-warning.opus | clock-warning | A single muted wooden metronome tick with a slightly urgent resonant tone, one clean short beat. | Once, when a timed board has 10 seconds left.
+menu-tap.opus | menu-tap | A light fingertip tapping a smooth frosted glass panel once, a soft clean interface click with tiny glassy resonance. | Every navigation button (data-goto, Play/Daily/Resume, pause sheet, results sheet).

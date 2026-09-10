@@ -131,7 +131,8 @@
       par: { moves: row[7] || 0, timeSec: row[6] || 0 },
       mechanics: { undo: true, hint: true },
       theme: THEMES[row[8]].id,
-      mastery: flags.indexOf('m') !== -1,
+      // Whole-word match: 'mate1' is a puzzle flag, not a mastery gate.
+      mastery: /(^|\s)m(\s|$)/.test(flags),
       mate1: flags.indexOf('mate1') !== -1,
       intro: row[10] || ''
     };

@@ -19,3 +19,8 @@ Generated with MOSS-SoundEffect v2.0, 48 kHz mono Opus (96 kbps VBR, loudness-no
 | game-ended-dull.opus | game-ended | A soft muted drum thump with a short low decay, signaling the game has already ended. |
 | unknown-command-buzz.opus | unknown-command | A short low electric buzz like a quiz-show wrong-answer buzzer, half a second long. |
 | malformed-command-click.opus | malformed-command | A single dry mechanical switch click followed by a faint plastic snap, a rejected input. |
+| hint-chime.opus | hint | A single soft glass bell struck once with a gentle upward shimmer, a friendly suggestion cue, short and clean. |
+| undo-rewind.opus | undo | A small wooden disc sliding quickly back up a plastic slot with a short reversed whoosh and a faint click at the end. |
+| lesson-complete.opus | lesson-complete | Two warm marimba notes rising a fifth followed by a soft wooden tap, a small lesson-finished acknowledgement. |
+| clock-warning.opus | clock-warning | A single muted wooden metronome tick with a slightly urgent resonant tone, one clean short beat. |
+| menu-tap.opus | menu-tap | A light fingertip tapping a smooth frosted glass panel once, a soft clean interface click with tiny glassy resonance. |

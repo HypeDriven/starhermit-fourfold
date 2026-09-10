@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "test": "node --test tests/rules.test.mjs",
     "test:e2e": "node tests/e2e.mjs"
   },
   "license": "SEE LICENSE IN LICENSE.md",

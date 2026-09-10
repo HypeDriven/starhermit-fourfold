@@ -31,6 +31,7 @@ const MIME = {
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.webp': 'image/webp',
   '.ico': 'image/x-icon',
   '.wav': 'audio/wav',
   '.mp3': 'audio/mpeg',
@@ -52,7 +53,9 @@ function serve() {
       res.end(data);
     });
   });
-  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
+  // PORT pins the test server (CI port ranges); otherwise an ephemeral port.
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 0;
+  return new Promise((resolve) => server.listen(port, '127.0.0.1', () => resolve(server)));
 }
 
 const server = await serve();

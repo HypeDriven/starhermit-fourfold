@@ -162,6 +162,7 @@
       startedAt: 0,
       hintCol: -1,
       lessonDrops: [],
+      clockWarned: false,
       theme: themeFor(cfg.theme)
     };
 
@@ -221,6 +222,11 @@
       Sfx.playResult(res);
       finishGame();
       return;
+    }
+    // One warning tick when a timed board enters its last ten seconds.
+    if (limit > 0 && !session.clockWarned && limit * 1000 - elapsedMs() <= 10000) {
+      session.clockWarned = true;
+      Sfx.play('clock-warning');
     }
     updateMeta();
   }
@@ -303,6 +309,7 @@
       if (session.state.current === 1 || session.aiLevel === 0) break;
     }
     if (!steps) { announce('Nothing to undo.'); return; }
+    Sfx.play('undo');
     session.hintCol = -1;
     if (session.lessonDrops.length) session.lessonDrops.pop();
     view.clearAnims();
@@ -320,6 +327,7 @@
     try { col = AI.suggestMove(session.state, session.rng); } catch (e) { col = -1; }
     if (col == null || col < 0) { announce('No hint available.'); return; }
     session.hintCol = col;
+    Sfx.play('hint');
     render();
     announce('Hint: column ' + (col + 1) + '.');
   }
@@ -427,8 +435,20 @@
     btn.hidden = !next;
     if (next) btn.textContent = 'Next: ' + next.name;
 
+    setResultsArt(head.cls === 'win' ? 'win' : head.cls === 'loss' ? 'lose' : '');
     openOverlay('overlay-results');
     announce(head.text + '. Score ' + st.score.total + '.');
+  }
+
+  // Results illustration (assets/results-*.webp). Purely decorative: hidden
+  // for draws, and removed by its own onerror if the file fails to load.
+  function setResultsArt(kind) {
+    var img = $('res-art');
+    if (!img) return;
+    if (!kind || img.dataset.failed) { img.hidden = true; return; }
+    var src = 'assets/results-' + kind + '.webp';
+    if (img.getAttribute('src') !== src) img.setAttribute('src', src);
+    img.hidden = false;
   }
 
   function nextStage() {
@@ -457,11 +477,13 @@
     store.lessons[l.id] = true;
     store.save = null;
     saveStore();
+    Sfx.play('lesson-complete');
     $('res-headline').textContent = 'Lesson complete';
     $('res-headline').className = 'headline win';
     $('res-stars').textContent = '';
     clear($('res-breakdown'));
     $('res-next').hidden = true;
+    setResultsArt('win');
     openOverlay('overlay-results');
     announce('Lesson complete.');
     return true;
@@ -843,6 +865,14 @@
   }
 
   function bindNav() {
+    // Every menu, sheet and header button acknowledges with the same tap cue;
+    // board columns and tray actions have their own event sounds.
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('button');
+      if (!b || b.disabled) return;
+      if (b.closest('#col-layer') || b.closest('.tray')) return;
+      Sfx.play('menu-tap');
+    });
     document.querySelectorAll('[data-goto]').forEach(function (b) {
       b.addEventListener('click', function () {
         var t = b.dataset.goto;

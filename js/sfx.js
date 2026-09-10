@@ -4,8 +4,10 @@
  * Event names mirror the rules engine's event and invalid-reason strings
  * (js/rules.js): drop, win, draw, move-limit, resigned, time-up,
  * column-full, bad-column, banned-column, out-of-turn, game-ended,
- * unknown-command, malformed-command. Call FFSfx.playResult() with the
- * object returned by FFRules.applyCommand(), or FFSfx.play(event).
+ * unknown-command, malformed-command. Five UI cues are owned by js/ui.js:
+ * hint, undo, lesson-complete, clock-warning, menu-tap. Call
+ * FFSfx.playResult() with the object returned by FFRules.applyCommand(),
+ * or FFSfx.play(event). The full table is sfx/manifest.txt.
  *
  * Samples live in sfx/<name>.opus (see sfx/manifest.json). Each is
  * lazy-fetched and decoded on first use, after the first user gesture
@@ -33,7 +35,13 @@
     'out-of-turn': ['out-of-turn-tap'],
     'game-ended': ['game-ended-dull'],
     'unknown-command': ['unknown-command-buzz'],
-    'malformed-command': ['malformed-command-click']
+    'malformed-command': ['malformed-command-click'],
+    // UI-owned cues (js/ui.js), not rules events.
+    'hint': ['hint-chime'],
+    'undo': ['undo-rewind'],
+    'lesson-complete': ['lesson-complete'],
+    'clock-warning': ['clock-warning'],
+    'menu-tap': ['menu-tap']
   };
 
   var ctx = null;
@@ -180,6 +188,28 @@
       case 'malformed-command':
         thump(0.03, 2500, 0.4);
         thump(0.05, 1800, 0.3, 0.08);
+        break;
+      case 'hint':
+        tone(1318, 0.18, 'sine', 0.18);
+        tone(1760, 0.3, 'sine', 0.14, 0.09);
+        break;
+      case 'undo':
+        tone(420, 0.12, 'triangle', 0.18);
+        tone(300, 0.14, 'triangle', 0.16, 0.08);
+        thump(0.03, 1800, 0.25, 0.2);
+        break;
+      case 'lesson-complete':
+        tone(523, 0.18, 'triangle', 0.25);
+        tone(784, 0.3, 'triangle', 0.25, 0.16);
+        thump(0.05, 900, 0.3, 0.4);
+        break;
+      case 'clock-warning':
+        thump(0.04, 1400, 0.4);
+        tone(660, 0.12, 'sine', 0.18);
+        break;
+      case 'menu-tap':
+        thump(0.025, 2200, 0.25);
+        tone(900, 0.05, 'sine', 0.08);
         break;
     }
   }

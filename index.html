@@ -27,6 +27,8 @@
   <!-- ---------- title ---------- -->
   <section class="screen active" id="screen-title" aria-labelledby="title-h">
     <div class="inner">
+      <img class="title-art" src="assets/key-art.webp" width="1280" height="720" alt=""
+           decoding="async" onerror="this.remove()">
       <h2 id="title-h">Make four in a row</h2>
       <p class="lede">Drop a disc into a column; it falls to the lowest free cell. The first
         player to line up four — across, up, or diagonally — wins the board.</p>
@@ -185,6 +187,8 @@
 
 <div class="overlay" id="overlay-results" role="dialog" aria-modal="true" aria-labelledby="res-headline">
   <div class="sheet">
+    <img class="results-art" id="res-art" alt="" hidden decoding="async"
+         onerror="this.dataset.failed='1';this.hidden=true">
     <p class="headline" id="res-headline"></p>
     <p class="stars" id="res-stars" style="color:var(--p1);letter-spacing:.2em"></p>
     <dl class="breakdown" id="res-breakdown"></dl>

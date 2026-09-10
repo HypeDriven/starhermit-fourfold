@@ -88,5 +88,35 @@
     "seconds": 1,
     "prompt": "A single dry mechanical switch click followed by a faint plastic snap, a rejected input.",
     "event": "malformed-command"
+  },
+  {
+    "name": "hint-chime",
+    "seconds": 1,
+    "prompt": "A single soft glass bell struck once with a gentle upward shimmer, a friendly suggestion cue, short and clean.",
+    "event": "hint"
+  },
+  {
+    "name": "undo-rewind",
+    "seconds": 1,
+    "prompt": "A small wooden disc sliding quickly back up a plastic slot with a short reversed whoosh and a faint click at the end.",
+    "event": "undo"
+  },
+  {
+    "name": "lesson-complete",
+    "seconds": 2,
+    "prompt": "Two warm marimba notes rising a fifth followed by a soft wooden tap, a small lesson-finished acknowledgement.",
+    "event": "lesson-complete"
+  },
+  {
+    "name": "clock-warning",
+    "seconds": 1,
+    "prompt": "A single muted wooden metronome tick with a slightly urgent resonant tone, one clean short beat.",
+    "event": "clock-warning"
+  },
+  {
+    "name": "menu-tap",
+    "seconds": 1,
+    "prompt": "A light fingertip tapping a smooth frosted glass panel once, a soft clean interface click with tiny glassy resonance.",
+    "event": "menu-tap"
   }
 ]

@@ -132,6 +132,23 @@ button.wide { width: 100%; text-align: center; }
 .stage-grid .card { padding: 9px 10px; font-size: .92em; }
 .stage-grid .card.mastery { border-color: var(--p1); }
 
+/* ---------- illustrations (decorative; pages work without them) ---------- */
+
+.title-art {
+  display: block; width: 100%; height: auto; max-height: 230px;
+  object-fit: cover; object-position: center 40%;
+  border-radius: var(--radius); border: 1px solid var(--line);
+  background: #0a0f1e;
+}
+.results-art {
+  display: block; width: calc(100% + 36px); margin: -18px -18px 0;
+  height: 140px; object-fit: cover; object-position: center;
+  border-radius: 16px 16px 0 0; background: #0a0f1e;
+}
+@media (max-height: 560px) {
+  .title-art, .results-art { display: none; }
+}
+
 /* ---------- play screen ---------- */
 
 #screen-play { padding: 10px; }
