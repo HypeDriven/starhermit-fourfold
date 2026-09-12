@@ -12,12 +12,14 @@
 <script src="js/content.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/sfx.js"></script>
+<script src="js/platform.js"></script>
 <script src="js/ui.js"></script>
 </head>
 <body>
 
 <header class="app-header">
   <h1><span class="mark">▮</span> Fourfold</h1>
+  <span class="acct" id="hdr-acct" hidden></span>
   <button type="button" class="icon ghost" data-goto="help" aria-label="Help and rules">?</button>
   <button type="button" class="icon ghost" data-goto="settings" aria-label="Settings">⚙</button>
 </header>
@@ -139,7 +141,7 @@
       </fieldset>
       <fieldset>
         <legend>Data</legend>
-        <p class="status-line">Progress is stored only in this browser.</p>
+        <p class="status-line" id="data-status">Progress is stored only in this browser.</p>
         <button type="button" id="set-reset">Erase progress on this device</button>
       </fieldset>
       <div class="row"><button type="button" class="ghost" data-goto="title">Back</button></div>

@@ -11,9 +11,9 @@
 | Genre | Turn-based alignment / connection game |
 | Players | 1 vs AI (four levels), 2 local pass-and-play, one 3-player table vs two AIs |
 | Session | 1–4 minutes per board; Journey stages chain with a Next button |
-| Platforms | Desktop and mobile browsers, portrait and landscape; no install, no account |
+| Platforms | Desktop and mobile browsers, portrait and landscape; no install; a StarHermit account is used only when the game is launched with a platform token |
 | Rendering | Three.js orthographic scene on a `<canvas>` with a same-interface 2D-canvas fallback; every control is semantic HTML laid over or beside it |
-| Persistence | `localStorage` key `fourfold.v1` (settings, progress, one resumable save) |
+| Persistence | `localStorage` key `fourfold.v1` (settings, progress, one resumable save); mirrored to the StarHermit cloud save when launched with a token |
 | Server | `server.js` static host + `/api/health`; no authoritative play |
 
 File map (everything the browser or tests load):
@@ -27,6 +27,7 @@ File map (everything the browser or tests load):
 | `js/content.js` | Player identities, 5 themes, 6 lessons, 42 journey stages, 5 practice presets, 7 challenges, daily generator, achievements, offline validator |
 | `js/ai.js` | Four AI levels and the hint search; deterministic per (state, level, seed) |
 | `js/sfx.js` | WebAudio sample player with per-event synth fallback (`FFSfx`) |
+| `js/platform.js` | StarHermit adapter (`FFPlatform`): launch-token read/strip + 45-min refresh, profile nickname, cloud mirror of the progress doc (stored zip), sync status; inert without a token |
 | `js/ui.js` | Screens, input, HUD, clock, AI scheduler, persistence, results, a11y mirror (`FFUI`) |
 | `js/view3d.js` | Board presentation: Three.js view and 2D fallback behind one interface |
 | `vendor/three.module.min.js` | Three.js (ES module), the only third-party runtime code |
@@ -208,17 +209,18 @@ The build ships **English only**; every string is an inline literal in `index.ht
 | Platform feature | Used? | Notes |
 |---|---|---|
 | Launch manifest / cover | Yes | as above |
-| Identity, profile, presence | No | no sign-in; guest play only |
-| Per-game settings / cloud save | No | `localStorage` only; "Progress is stored only in this browser" is shown in Settings |
-| Leaderboards | No | no submissions; scores are local bests |
-| Achievements | No | five local flags in `store.achievements`; not sent to the platform |
+| Launch-token auth | Yes (hosted) | `#game_token=` fragment read once and stripped; `sub`/`game_scope` decoded; Bearer on every call; re-mint via `POST /api/v1/games/{slug}/launch-token` every 45 min (`js/platform.js`) |
+| Identity, profile, presence | Partial | nickname from `GET /api/v1/users/{sub}/profile` shown in the header ("Player "+id8 fallback); presence not used |
+| Per-game settings / cloud save | Yes (hosted) | the whole `fourfold.v1` doc mirrors to `GET/PUT /api/v1/me/cloud-saves/{slug}` as a stored zip (remote wins on load, 2 s debounce + pagehide flush); `localStorage` stays the offline cache; sync status in Settings |
+| Leaderboards | No | no submissions (clients cannot submit); scores are local bests, carried inside the cloud-saved doc |
+| Achievements | Local | five flags in `store.achievements`, synced inside the cloud-saved doc; never submitted to the platform (no client claim path) |
 | Sessions, invitations, matchmaking | No | Two-player mode is pass-and-play on one device |
 | Server script | Declared, inert | `server.js` serves files and `/api/health`; it holds no rules and no session |
 | Platform time | No | Daily uses the client's UTC date |
 
 ## 13. Technical architecture
 
-- **Boundaries.** `rules.js` and `content.js` are UMD modules with no DOM or clock; `ui.js` is the only writer of `localStorage` and the only caller of `applyCommand`; `view3d.js` only ever receives a snapshot via `sync(state, {theme, hover})` and drop events via `dropAnim(col,row)`; `sfx.js` receives the `applyCommand` result (`playResult`) or an event id.
+- **Boundaries.** `rules.js` and `content.js` are UMD modules with no DOM or clock; `ui.js` is the only writer of `localStorage` and the only caller of `applyCommand`; `platform.js` owns token auth, the nickname, and the cloud mirror but never touches game state — with no launch token it makes no network calls; `view3d.js` only ever receives a snapshot via `sync(state, {theme, hover})` and drop events via `dropAnim(col,row)`; `sfx.js` receives the `applyCommand` result (`playResult`) or an event id.
 - **Determinism.** A finished game is fully described by `(cfg, drops)`; `replay` reproduces `hashState`. AI moves are a pure function of `(state, level, rng stream)`; the same seed replays the same rival. The e2e test asserts the replay hash and a serialize/deserialize round-trip in the live page.
 - **Persistence.** `fourfold.v1` document: `settings`, `journey`, `challenges`, `lessons`, `daily`, `stats`, `achievements`, `save`. Loaded with a forward-merge onto defaults so a partial or older document never crashes boot; a different `v` resets the document. "Erase progress on this device" resets it after a `confirm()`.
 - **Clock.** `session.elapsedMs` accumulates only while the play screen is active and unpaused (`resumeClock`/`pauseClock`); the tick runs every 250 ms and fires `timeout` through the engine when a limit is reached. Tab hide pauses.
@@ -260,6 +262,7 @@ The build ships **English only**; every string is an inline literal in `index.ht
 - English only (section 10).
 - `server=server.js` is declared but the script is a static host; nothing about a game is authoritative or shared. Two-player play is same-device only.
 - Achievements are stored but no screen lists them; the only visible progress is the title stats line, journey stars and challenge bests.
+- Cloud sync and the account name only appear when the game is launched with a StarHermit token; plain local play stays local-only.
 - `THEMES[].unlockStars` is never read: themes are assigned by content, not unlocked.
 - The Daily uses the client clock for its date and overwrites the day's record on replay (no "first attempt counts").
 - The `win` cue plays for the rival's line too; only the headline colour distinguishes it.
@@ -272,7 +275,7 @@ The build ships **English only**; every string is an inline literal in `index.ht
 ## 17. Design intent not yet implemented
 
 - Ship the nine required locales with a string table and `navigator.language` selection.
-- Surface achievements (and submit them, with journey stars and challenge bests, to StarHermit) once identity is wired.
+- Surface the five achievements in a screen (they already sync inside the cloud-saved doc; the platform offers no client achievement-submit path).
 - Use platform time for the Daily boundary and keep only the first daily attempt as the record.
 - Give the rival's win its own, cooler cue.
 - Hosted two-player sessions through the StarHermit Games API, with `server.js` as the authoritative script.

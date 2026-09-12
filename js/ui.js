@@ -12,6 +12,7 @@
   'use strict';
 
   var Rules = root.FFRules, AI = root.FFAI, Content = root.FFContent, Sfx = root.FFSfx;
+  var Platform = root.FFPlatform;
 
   var STORE_KEY = 'fourfold.v1';
   var STORE_VERSION = 1;
@@ -40,18 +41,41 @@
     } catch (e) { s = null; }
     if (!s || typeof s !== 'object' || s.v !== STORE_VERSION) return clone(DEFAULT_STORE);
     // Merge forward so a partial or older-shaped document never crashes boot.
-    var out = clone(DEFAULT_STORE);
-    Object.keys(out).forEach(function (k) {
-      if (k === 'v' || s[k] == null) return;
-      if (typeof out[k] === 'object' && out[k] && !Array.isArray(out[k]) && typeof s[k] === 'object')
-        out[k] = Object.assign(out[k], s[k]);
-      else out[k] = s[k];
-    });
-    return out;
+    return mergeDoc(clone(DEFAULT_STORE), s);
   }
 
-  function saveStore() {
+  function writeStore() {
     try { root.localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { /* private mode */ }
+  }
+
+  // Local write + schedule the cloud mirror. The platform adapter debounces
+  // (and skips unchanged documents); with no launch token it is a no-op.
+  function saveStore() {
+    writeStore();
+    if (Platform) Platform.push();
+  }
+
+  function mergeDoc(base, doc) {
+    Object.keys(base).forEach(function (k) {
+      if (k === 'v' || doc[k] == null) return;
+      if (typeof base[k] === 'object' && base[k] && !Array.isArray(base[k]) && typeof doc[k] === 'object')
+        base[k] = Object.assign(base[k], doc[k]);
+      else base[k] = doc[k];
+    });
+    return base;
+  }
+
+  // Remote-preferred load: a valid remote document replaces the local store
+  // (achievements and the interrupted save travel inside it). Written straight
+  // to the local cache without scheduling a push — both sides already match.
+  function adoptRemoteStore(doc) {
+    if (!doc || typeof doc !== 'object' || doc.v !== STORE_VERSION) return false;
+    store = mergeDoc(clone(DEFAULT_STORE), doc);
+    writeStore();
+    applySettings();
+    refreshTitle();
+    if (session) render();
+    return true;
   }
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -624,6 +648,36 @@
   }
   function setStatus(text) { announce(text, false); }
 
+  // ---------- account & sync status ----------
+
+  var SYNC_TEXT = {
+    loading: 'Syncing…',
+    saving: 'Saving…',
+    synced: 'Cloud saved',
+    offline: 'Cloud unreachable — progress stays on this device',
+    error: 'Cloud sync failed — will retry'
+  };
+
+  // The account nickname sits in the header next to the wordmark; the
+  // Settings "Data" line carries the cloud sync state. Offline everything
+  // reads exactly as before the platform adapter existed.
+  function updateAccountUI() {
+    if (!Platform) return;
+    var st = Platform.state();
+    var acct = $('hdr-acct'), line = $('data-status'), wipe = $('set-reset');
+    if (!acct || !line || !wipe) return;
+    if (st.online) {
+      acct.hidden = false;
+      acct.textContent = st.nickname;
+      line.textContent = 'Signed in as ' + st.nickname + ' · ' + (SYNC_TEXT[st.status] || st.status);
+      wipe.textContent = 'Erase progress on this device and in the cloud';
+    } else {
+      acct.hidden = true;
+      line.textContent = 'Progress is stored only in this browser.';
+      wipe.textContent = 'Erase progress on this device';
+    }
+  }
+
   // ---------- screens & overlays ----------
 
   function showScreen(name) {
@@ -927,7 +981,16 @@
     applySettings();
     showScreen('title');
 
-    root.FFUI.store = store;
+    if (Platform) {
+      Platform.onChange(updateAccountUI);
+      Platform.init({
+        doc: function () { return JSON.stringify(store); },
+        applyRemote: adoptRemoteStore
+      });
+      updateAccountUI();
+    }
+
+    Object.defineProperty(root.FFUI, 'store', { configurable: true, get: function () { return store; } });
     root.FFUI.startSession = startSession;
     root.FFUI.getSession = function () { return session; };
     root.__ffReady = true;

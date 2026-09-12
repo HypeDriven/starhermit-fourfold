@@ -66,6 +66,14 @@ body.high-contrast {
   margin-right: auto;
 }
 .app-header h1 .mark { color: var(--accent); }
+.app-header .acct {
+  font-size: .85em;
+  color: var(--ink-dim);
+  max-width: 38vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 main { flex: 1 1 auto; display: flex; min-height: 0; }
 
