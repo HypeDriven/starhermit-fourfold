@@ -223,6 +223,29 @@ label.opt input { width: 20px; height: 20px; accent-color: var(--accent); }
 label.slider { display: grid; gap: 4px; }
 label.slider input { width: 100%; accent-color: var(--accent); }
 
+/* ---------- Graphics settings ---------- */
+fieldset.gfx { display: grid; gap: 8px; min-width: 0; }
+fieldset.gfx label.field { display: grid; gap: 4px; min-width: 0; }
+fieldset.gfx label.field > span { color: var(--ink-dim); font-size: .9em; }
+fieldset.gfx select {
+  font: inherit; color: var(--ink); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  min-height: var(--tap); padding: 6px 10px; width: 100%; min-width: 0;
+}
+fieldset.gfx select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+fieldset.gfx .slider-head { display: flex; justify-content: space-between; gap: 8px; white-space: nowrap; }
+fieldset.gfx .slider-head output { font-variant-numeric: tabular-nums; color: var(--ink-dim); }
+fieldset.gfx label.slider input { min-height: var(--tap); }
+fieldset.gfx .gfx-cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px 12px; }
+fieldset.gfx #gfx-summary { overflow-wrap: anywhere; }
+fieldset.gfx .gfx-note { color: var(--p1); }
+
+#gfx-fps-meter {
+  position: fixed; left: calc(4px + env(safe-area-inset-left)); bottom: calc(4px + env(safe-area-inset-bottom));
+  z-index: 50; pointer-events: none; padding: 1px 6px; border-radius: 6px;
+  background: rgba(0, 0, 0, .55); color: #cfe0ff; font: 11px/1.5 ui-monospace, monospace;
+}
+
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;

@@ -7,6 +7,12 @@
 <title>Fourfold</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="css/app.css">
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three.module.min.js",
+    "three/addons/": "./vendor/three/addons/"
+} }
+</script>
 <script src="js/rng.js"></script>
 <script src="js/rules.js"></script>
 <script src="js/content.js"></script>
@@ -139,6 +145,7 @@
         <label class="opt"><input type="checkbox" id="set-text"> Larger text</label>
         <p class="status-line">Disc colours are always reinforced by a shape: ● you, ◆ rival, ▲ third, ■ fourth.</p>
       </fieldset>
+      <fieldset id="set-gfx-fieldset" class="gfx"><legend>Graphics</legend></fieldset>
       <fieldset>
         <legend>Data</legend>
         <p class="status-line" id="data-status">Progress is stored only in this browser.</p>
@@ -202,8 +209,11 @@
 
 <script type="module">
   import { createView } from './js/view3d.js';
+  import { initGraphicsPanel } from './js/gfxpanel.js';
+  let view = null;
   try {
-    window.FFUI.boot({ createView });
+    window.FFUI.boot({ createView: (canvas, opts) => (view = createView(canvas, opts)) });
+    initGraphicsPanel(() => view);
   } catch (e) {
     document.body.insertAdjacentHTML('afterbegin',
       '<p class="status-line error" style="padding:16px">Fourfold could not start: ' +

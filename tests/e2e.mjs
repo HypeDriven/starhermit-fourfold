@@ -92,7 +92,8 @@ async function runPass(label, viewport, hasTouch) {
   const page = await context.newPage();
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
-    if (m.type() === 'error' && !browserNoise.test(m.text())) errors.push(`console: ${m.text()}`);
+    if ((m.type() === 'error' || m.type() === 'warning') && !browserNoise.test(m.text()))
+      errors.push(`console ${m.type()}: ${m.text()}`);
   });
   page.on('response', (r) => { if (r.status() >= 400) errors.push(`http ${r.status()}: ${r.url()}`); });
   page.on('requestfailed', (r) => errors.push(`requestfailed: ${r.url()} ${r.failure()?.errorText || ''}`));
@@ -361,6 +362,75 @@ async function runPass(label, viewport, hasTouch) {
       });
       if (check.count < 10) throw new Error('sfx manifest too small: ' + check.count);
       if (check.sampleStatus !== 200) throw new Error('sample clip not served: ' + check.sampleStatus);
+    });
+
+    // Graphics settings through the visible Settings screen: presets, an
+    // override, live application on the board, persistence across a reload.
+    const openGraphics = async () => {
+      await page.locator('header [data-goto="settings"]').click();
+      await page.locator('#screen-settings.active').waitFor();
+      await page.locator('#gfx-preset').scrollIntoViewIfNeeded();
+    };
+    const gfxPreset = () => page.evaluate(() => document.body.dataset.gfxPreset);
+    const playOneDrop = async () => {
+      await page.locator('#screen-settings [data-goto="title"]').click();
+      await page.getByRole('button', { name: 'Play', exact: true }).click();
+      await page.getByRole('button', { name: /Steady AI/ }).click();
+      await page.locator('#screen-play.active').waitFor();
+      await page.locator('#col-layer button').nth(3).click();
+      await waitForTurn(page);
+      await page.waitForTimeout(400);
+      await page.keyboard.press('p');
+      await page.locator('#pause-leave').click();
+      await page.locator('#screen-title.active').waitFor();
+    };
+
+    await step('Graphics: presets and overrides apply live', async () => {
+      await openGraphics();
+      const fits = await page.evaluate(() => {
+        const r = document.getElementById('set-gfx-fieldset').getBoundingClientRect();
+        return r.left >= 0 && r.right <= window.innerWidth + 0.5 &&
+          document.scrollingElement.scrollWidth <= window.innerWidth;
+      });
+      if (!fits) throw new Error('Graphics panel does not fit the viewport width');
+      const auto = await page.locator('#gfx-preset option[value="auto"]').textContent();
+      if (!/Auto \(detected: \w+\)/.test(auto)) throw new Error('auto option label: ' + auto);
+      await page.locator('#gfx-preset').selectOption('low');
+      if (await gfxPreset() !== 'low') throw new Error('Low preset not applied');
+      await page.locator('#gfx-preset').selectOption('high');
+      if (await gfxPreset() !== 'high') throw new Error('High preset not applied');
+      const from = await page.locator('#gfx-cat-shadows option[value="preset"]').textContent();
+      if (from !== 'From preset (Medium)') throw new Error('shadows preset label: ' + from);
+      await page.locator('#gfx-cat-shadows').selectOption('off');
+      const summary = await page.locator('#gfx-summary').textContent();
+      if (!summary.includes('no shadows')) throw new Error('summary did not reflect the override: ' + summary);
+      await page.locator('#gfx-fps').check();
+      await playOneDrop();   // renders the High post chain on the real board
+      const board = await page.evaluate(() => document.getElementById('board').dataset.gfxPreset);
+      if (board !== 'high') throw new Error('board not rendering at High: ' + board);
+    });
+
+    await step('Graphics: settings survive a reload; a preset clears overrides', async () => {
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.waitForFunction(() => window.__ffReady === true);
+      if (await gfxPreset() !== 'high') throw new Error('High preset lost on reload');
+      await openGraphics();
+      if (await page.locator('#gfx-preset').inputValue() !== 'high') throw new Error('preset select not restored');
+      if (await page.locator('#gfx-cat-shadows').inputValue() !== 'off') throw new Error('override not restored');
+      if (!(await page.locator('#gfx-fps').isChecked())) throw new Error('frame-rate toggle not restored');
+      await page.locator('#gfx-preset').selectOption('ultra');
+      if (await page.locator('#gfx-cat-shadows').inputValue() !== 'preset') throw new Error('preset did not clear overrides');
+      await page.locator('#gfx-scale').fill('150');
+      if ((await page.locator('#gfx-scale-out').textContent()) !== '150%') throw new Error('render scale label');
+      await playOneDrop();   // Ultra: MSAA target, high AO, render scale 150%
+      if (await gfxPreset() !== 'ultra') throw new Error('Ultra not applied');
+      await openGraphics();
+      await page.locator('#gfx-fps').uncheck();
+      await page.locator('#gfx-scale').fill('100');
+      await page.locator('#gfx-preset').selectOption('auto');
+      const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('fourfold.gfx')));
+      if (saved.preset !== 'auto' || saved.shadows) throw new Error('auto not saved: ' + JSON.stringify(saved));
+      await page.locator('#screen-settings [data-goto="title"]').click();
     });
   } catch (e) {
     console.error(`FAIL - ${e.message}`);
