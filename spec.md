@@ -293,3 +293,7 @@ The build ships **English only**; every string is an inline literal in `index.ht
 - Use platform time for the Daily boundary and keep only the first daily attempt as the record.
 - Give the rival's win its own, cooler cue.
 - Hosted two-player sessions through the StarHermit Games API, with `server.js` as the authoritative script.
+
+## Browser interference
+
+`browser-guard.js` (loaded from `index.html`) suppresses browser UI that gets in the way of play: the right-click context menu, the iOS long-press callout, copy / cut / paste, and page text selection. Text fields (inputs, textareas, selects, contenteditable) keep normal selection, context menu and clipboard behaviour.
