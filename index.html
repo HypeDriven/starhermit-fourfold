@@ -18,7 +18,9 @@
 <script src="js/content.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/sfx.js"></script>
+<script src="starhermit-sdk.js"></script>
 <script src="js/platform.js"></script>
+<script src="js/platform-i18n.js"></script>
 <script src="js/ui.js"></script>
 <script src="browser-guard.js"></script>
 </head>
@@ -60,6 +62,11 @@
           <span class="title">Learn</span><span class="sub">Six short lessons</span>
         </button>
       </div>
+      <div class="row account-row">
+        <button type="button" class="ghost" id="btn-signin" hidden>Sign in with StarHermit</button>
+        <button type="button" class="ghost" id="btn-invite" hidden>Invite a friend</button>
+      </div>
+      <p class="status-line" id="account-status" aria-live="polite"></p>
     </div>
   </section>
 

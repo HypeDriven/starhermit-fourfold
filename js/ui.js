@@ -661,11 +661,18 @@
   // The account nickname sits in the header next to the wordmark; the
   // Settings "Data" line carries the cloud sync state. Offline everything
   // reads exactly as before the platform adapter existed.
+  var wasOnline = false;
   function updateAccountUI() {
     if (!Platform) return;
     var st = Platform.state();
     var acct = $('hdr-acct'), line = $('data-status'), wipe = $('set-reset');
     if (!acct || !line || !wipe) return;
+    var ps = root.FFPlatformStrings ? root.FFPlatformStrings() : null;
+    var signIn = $('btn-signin'), invite = $('btn-invite');
+    if (signIn && ps) { signIn.textContent = ps.signIn; signIn.hidden = !st.canSignIn; }
+    if (invite && ps) { invite.textContent = ps.invite; invite.hidden = !st.online; }
+    if (wasOnline && !st.online && ps) accountNotice(ps.signedOut);
+    wasOnline = st.online;
     if (st.online) {
       acct.hidden = false;
       acct.textContent = st.nickname;
@@ -826,14 +833,52 @@
     if (session) render();
   }
 
+  // Preferences mirror to the platform settings KV (same keys as
+  // store.settings); debounced so dragging the volume slider sends one patch.
+  var settingsTimer = 0;
+  function syncSettings() {
+    if (!Platform || !Platform.state().online) return;
+    if (settingsTimer) clearTimeout(settingsTimer);
+    settingsTimer = setTimeout(function () { settingsTimer = 0; Platform.patchSettings(clone(store.settings)); }, 400);
+  }
+  function adoptRemoteSettings(remote) {
+    var changed = false;
+    Object.keys(DEFAULT_STORE.settings).forEach(function (k) {
+      var v = remote && remote[k];
+      if (v == null || typeof v !== typeof DEFAULT_STORE.settings[k]) return;
+      if (k === 'volume') v = Math.max(0, Math.min(1, v));
+      if (store.settings[k] !== v) { store.settings[k] = v; changed = true; }
+    });
+    if (changed) { writeStore(); applySettings(); }
+  }
+
+  // Keyboard actions → effective codes (platform bindings when signed in).
+  var keyBindings = null;
+  function actionForCode(code) {
+    var b = keyBindings || (Platform && Platform.DEFAULT_KEYS) || {};
+    for (var a in b) if (b[a].indexOf(code) >= 0) return a;
+    return null;
+  }
+
+  function accountNotice(text) { var n = $('account-status'); if (n) n.textContent = text; }
+
+  function copyInvite() {
+    var link = Platform && Platform.inviteLink();
+    var ps = root.FFPlatformStrings();
+    if (!link) return;
+    var done = function (ok) { accountNotice(ok ? ps.inviteCopied : ps.inviteFailed); };
+    try { navigator.clipboard.writeText(link).then(function () { done(true); }, function () { done(false); }); }
+    catch (e) { done(false); }
+  }
+
   function bindSettings() {
     $('set-volume').addEventListener('input', function () {
-      store.settings.volume = (+this.value || 0) / 100; saveStore(); applySettings();
+      store.settings.volume = (+this.value || 0) / 100; saveStore(); applySettings(); syncSettings();
     });
     [['set-muted', 'muted'], ['set-motion', 'reducedMotion'],
      ['set-contrast', 'highContrast'], ['set-text', 'largeText']].forEach(function (pair) {
       $(pair[0]).addEventListener('change', function () {
-        store.settings[pair[1]] = this.checked; saveStore(); applySettings();
+        store.settings[pair[1]] = this.checked; saveStore(); applySettings(); syncSettings();
       });
     });
     $('set-reset').addEventListener('click', function () {
@@ -869,7 +914,8 @@
     layer.addEventListener('keydown', function (e) {
       var b = e.target.closest('button[data-col]');
       if (!b) return;
-      var dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      var act = actionForCode(e.code);
+      var dir = act === 'colRight' ? 1 : act === 'colLeft' ? -1 : 0;
       if (!dir) return;
       e.preventDefault();
       var n = layer.children.length, i = +b.dataset.col;
@@ -889,7 +935,8 @@
     document.addEventListener('keydown', function (e) {
       if (e.target.matches('input, textarea, select')) return;
       var playing = $('screen-play').classList.contains('active');
-      if (e.key === 'Escape') {
+      var act = actionForCode(e.code);
+      if (act === 'back') {
         if ($('overlay-results').classList.contains('active')) return;
         if ($('overlay-pause').classList.contains('active')) { closePause(); return; }
         if (playing) { openPause(); return; }
@@ -898,13 +945,12 @@
       }
       if (!playing || $('overlay-pause').classList.contains('active') ||
           $('overlay-results').classList.contains('active')) return;
-      var k = e.key.toLowerCase();
-      if (k === 'p') { e.preventDefault(); openPause(); }
-      else if (k === 'u') { e.preventDefault(); undo(); }
-      else if (k === 'h') { e.preventDefault(); hint(); }
-      else if (k === 'r') { e.preventDefault(); restart(); }
-      else if (k >= '1' && k <= '9') {
-        var c = +k - 1;
+      if (act === 'pause') { e.preventDefault(); openPause(); }
+      else if (act === 'undo') { e.preventDefault(); undo(); }
+      else if (act === 'hint') { e.preventDefault(); hint(); }
+      else if (act === 'restart') { e.preventDefault(); restart(); }
+      else if (act && /^col\d$/.test(act)) {
+        var c = +act.slice(3) - 1;
         if (session && c < session.state.cols) { e.preventDefault(); humanDrop(c); }
       }
     });
@@ -985,8 +1031,12 @@
       Platform.onChange(updateAccountUI);
       Platform.init({
         doc: function () { return JSON.stringify(store); },
-        applyRemote: adoptRemoteStore
+        applyRemote: adoptRemoteStore,
+        applySettings: adoptRemoteSettings,
+        applyKeys: function (b) { keyBindings = b; }
       });
+      $('btn-signin').addEventListener('click', function () { Platform.signIn(); });
+      $('btn-invite').addEventListener('click', copyInvite);
       updateAccountUI();
     }
 

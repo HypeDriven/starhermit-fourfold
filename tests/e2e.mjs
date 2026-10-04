@@ -42,9 +42,25 @@ const MIME = {
   '.ts': 'application/typescript',
 };
 
+// StarHermit platform mocks for the signed-in pass; standalone passes must make no /api call.
+const apiLog = [];
+let mockSave = null;
+function platformMock(req, res, url) {
+  apiLog.push(`${req.method} ${url}`);
+  const json = (b, st = 200) => { res.writeHead(st, { 'content-type': 'application/json' }); res.end(JSON.stringify(b)); };
+  if (url.endsWith('/profile')) return json({ username: 'raw', nickname: 'Columnist' });
+  if (url.endsWith('/settings') && req.method === 'GET') return json({ settings: { volume: 0.3 } });
+  if (url.endsWith('/settings')) return json({ settings: {} });
+  if (url.endsWith('/controls')) return json({ actions: [{ action: 'undo', codes: ['KeyZ'] }] });
+  if (url.endsWith('/cloud-saves/game:fourfold-test/info')) return json({ exists: false });
+  if (url.endsWith('/cloud-saves/game:fourfold-test') && req.method === 'PUT') { mockSave = true; return json({}); }
+  return json({ error: 'not found' }, 404);
+}
+
 function serve() {
   const server = http.createServer((req, res) => {
     const url = decodeURIComponent(req.url.split('?')[0]);
+    if (url.startsWith('/api/')) return platformMock(req, res, url);
     const file = path.join(ROOT, url === '/' ? 'index.html' : url);
     if (!file.startsWith(ROOT)) { res.writeHead(403); res.end(); return; }
     fs.readFile(file, (err, data) => {
@@ -492,10 +508,58 @@ async function runFallbackPass() {
   }
 }
 
+// Signed-in launch: nickname, synced volume, platform key binding, invite link, cloud seed.
+async function runSignedInPass() {
+  const label = 'signed-in';
+  const errors = [];
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  await context.addInitScript(() => {
+    window.__copied = [];
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (t) => { window.__copied.push(t); } } });
+  });
+  const page = await context.newPage();
+  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+  page.on('console', (m) => { if ((m.type() === 'error' || m.type() === 'warning') && !browserNoise.test(m.text())) errors.push(`console: ${m.text()}`); });
+  const b64u = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const token = 'h.' + b64u({ sub: 'u-disc-123456', game_scope: 'fourfold-test', exp: Math.floor(Date.now() / 1000) + 3600 }) + '.s';
+  try {
+    await page.goto(`${base}/#game_token=${token}`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => window.__ffReady === true);
+    if (new URL(page.url()).hash) throw new Error('launch token left in the URL');
+    await page.waitForFunction(() => document.getElementById('hdr-acct').textContent === 'Columnist');
+    await page.waitForFunction(() => window.FFUI.store.settings.volume === 0.3);
+    if (await page.locator('#btn-signin').isVisible()) throw new Error('sign-in shown while signed in');
+    await page.locator('#btn-invite').click();
+    await page.waitForFunction(() => window.__copied.length === 1);
+    const link = await page.evaluate(() => window.__copied[0]);
+    if (!/\/game-invite\/u-disc-123456\/fourfold-test$/.test(link)) throw new Error('bad invite link ' + link);
+    if (!/Invite link copied/.test(await page.textContent('#account-status'))) throw new Error('no invite confirmation');
+    await page.screenshot({ path: SHOT('title', label) });
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.getByRole('button', { name: /Casual AI/ }).click();
+    await page.locator('#screen-play.active').waitFor();
+    await page.locator('#col-layer button').nth(3).click();
+    await waitForTurn(page);
+    await page.keyboard.press('KeyZ'); // platform rebinding of Undo
+    await page.waitForFunction(() => window.FFUI.getSession().state.drops.length === 0);
+    for (let i = 0; i < 40 && !mockSave; i++) await page.waitForTimeout(100);
+    if (!mockSave) throw new Error('cloud slot not written: ' + apiLog.join(', '));
+    if (errors.length) throw new Error(errors.join(' | '));
+    console.log(`ok - [${label}] nickname, synced volume, rebound undo, invite link, game:<slug> save`);
+  } catch (e) {
+    console.error(`FAIL - [${label}] ${e.message}`);
+    failures++;
+  } finally {
+    await context.close();
+  }
+}
+
 try {
   await runPass('desktop', { width: 1280, height: 800 }, false);
   await runPass('mobile', { width: 390, height: 844 }, true);
   await runFallbackPass();
+  if (apiLog.length) { console.error(`FAIL - standalone passes made platform calls: ${apiLog.join(', ')}`); failures++; }
+  await runSignedInPass();
 } finally {
   await browser.close();
   await new Promise((r) => server.close(r));
