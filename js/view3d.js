@@ -96,6 +96,15 @@ function layout(cols, rows) {
 /* ------------------------------------------------------------------ *
  * 2D canvas fallback
  * ------------------------------------------------------------------ */
+// The canvas's box in its own layout pixels: getBoundingClientRect is visual
+// (zoomed by --ui-scale on large screens), while columnRect feeds style
+// left/top/width/height of the column buttons, which are layout pixels.
+function layoutRect(canvas) {
+  const r = canvas.getBoundingClientRect();
+  const z = (window.UIScale && window.UIScale.value) || 1;
+  return { width: r.width / z, height: r.height / z };
+}
+
 function createCanvasView(canvas, opts) {
   const ctx = canvas.getContext('2d');
   let L = layout(7, 6);
@@ -240,7 +249,7 @@ function createCanvasView(canvas, opts) {
       return c >= 0 && c < L.cols ? c : -1;
     },
     columnRect(col) {
-      const rect = canvas.getBoundingClientRect();
+      const rect = layoutRect(canvas);
       const s = Math.min(rect.width / L.w, rect.height / L.h);
       return {
         left: rect.width / 2 + (L.x(col) - 0.5) * s,
@@ -1025,7 +1034,7 @@ function createThreeView(canvas, opts) {
       return c >= 0 && c < L.cols ? c : -1;
     },
     columnRect(col) {
-      const rect = canvas.getBoundingClientRect();
+      const rect = layoutRect(canvas);
       const scale = Math.max(L.w / rect.width, L.h / rect.height);
       const s = 1 / scale;
       return {
