@@ -14,7 +14,7 @@
 | Platforms | Desktop and mobile browsers, portrait and landscape; no install; a StarHermit account is used only when the game is launched with a platform token |
 | Rendering | Three.js orthographic scene on a `<canvas>` with a same-interface 2D-canvas fallback; every control is semantic HTML laid over or beside it |
 | Persistence | `localStorage` key `fourfold.v1` (settings, progress, one resumable save); mirrored to the StarHermit cloud save when launched with a token |
-| Server | `server.js` static host + `/api/health`; no authoritative play |
+| Server | `score-script.js` platform script (leaderboard posts only); `server.js` local static host + `/api/health`; no authoritative play |
 
 File map (everything the browser or tests load):
 
@@ -39,6 +39,7 @@ File map (everything the browser or tests load):
 | `coverart.png`, `icon.png`, `favicon.svg` | Store cover (1200x675), 256 px icon, tab icon |
 | `ui-scale.js` | Shared large-screen helper: sets `--ui-scale` on `<html>` (1 up to 1600×1000) |
 | `starhermit.txt`, `server.js`, `LICENSE.md` | Platform manifest, local host, PolyForm Noncommercial 1.0.0 |
+| `score-script.js` | StarHermit platform script (`server=`): range-checks a finished game's score and posts it to the `high-score` leaderboard (canonical copy in the games repo's `tools/score-script.js`) |
 | `tests/rules.test.mjs`, `tests/gfx.test.mjs`, `tests/e2e.mjs` | `npm test` (node --test: rules and graphics model) and the Playwright UI playthrough |
 
 ## 2. Vision and design pillars
@@ -84,7 +85,7 @@ Every rejection increments `stats.invalid`. Presets run through the same `place(
 
 Worked example — Journey 24 "Timed Mastery" (`par.moves` 12, `timeLimitSec` 120 so `par.timeSec` 120): you complete a line on your 9th drop at 47 s → win 1000 + parMoves (12−9)×25 = 75 + speed floor(73)×5 = 365 → **1440**. Stars (`starsFor`): 0 unless player 1 won; 1 when the stage has no par; 3 if `dropsBy[1] ≤ max(1, floor(par×0.7))` (= 8 here), 2 if ≤ par, else 1 → **2 stars** for that example.
 
-**Tie-breaks.** None exist: there is no ranking or leaderboard; a draw is a draw.
+**Tie-breaks.** None exist in the game; a draw is a draw. The platform `high-score` board (section 12) orders by score only.
 
 **RNG and seeding** (`js/rng.js`). One 32-bit master seed per game; `streams(seed)` derives `rules`, `decor`, `av`, `ai` streams by XOR with fixed tags. The rules stream is created and stored (`rngState`) but the drop rules use no randomness. The AI stream (`ui.js` `session.rng`) breaks ties among equally scored columns and drives the Casual level's lapses. Seeds: Journey and challenge seeds are authored constants; Daily seed = FNV-1a of `fourfold-daily-YYYY-MM-DD`; practice boards take a fresh `Math.random()` seed per board (Restart re-rolls it).
 
@@ -217,7 +218,7 @@ The build ships **English only**; every string is an inline literal in `index.ht
 
 ## 12. StarHermit integration
 
-`starhermit.txt` declares `name=Fourfold`, `launch=index.html`, `owner`, `server=server.js`, `version=1.0.0`, `rulesVersion=1`, `contentVersion=1`, `cover`, and one `control.<action>` line per keyboard action. Per https://wiki.starhermit.com/ conventions the game is a self-contained static distribution. `js/platform.js` (`FFPlatform`) is a thin adapter over the shared client `starhermit-sdk.js`, which `index.html` loads first; `StarHermit.init()` runs when `platform.js` loads, before any other script reads the URL.
+`starhermit.txt` declares `name=Fourfold`, `launch=index.html`, `owner`, `server=score-script.js`, `version=1.0.0`, `rulesVersion=1`, `contentVersion=1`, `cover`, and one `control.<action>` line per keyboard action. Per https://wiki.starhermit.com/ conventions the game is a self-contained static distribution. `js/platform.js` (`FFPlatform`) is a thin adapter over the shared client `starhermit-sdk.js`, which `index.html` loads first; `StarHermit.init()` runs when `platform.js` loads, before any other script reads the URL.
 
 | Platform feature | Used? | Notes |
 |---|---|---|
@@ -229,12 +230,12 @@ The build ships **English only**; every string is an inline literal in `index.ht
 | Cloud save | Yes (hosted) | the whole `fourfold.v1` doc mirrors to slot `game:<slug>` (`/api/v1/me/cloud-saves/game:<slug>`): slot info checked at boot, remote wins on load, an empty slot is seeded from the local doc, nothing is uploaded while that load runs (a save made meanwhile is pushed afterwards, from the adopted doc), 2 s debounce + pagehide/hidden flush; `localStorage` stays the offline cache; sync status in Settings |
 | Settings KV | Yes (hosted) | `volume`, `muted`, `reducedMotion`, `highContrast`, `largeText` are patched (debounced) on change and the platform values are applied at boot after the save doc. Graphics stay device-local (`fourfold.gfx`) because they depend on the device's GPU |
 | Controls | Yes | keydown is routed by `KeyboardEvent.code` through `StarHermit.loadBindings` (`colLeft`, `colRight`, `col1`–`col9`, `undo`, `hint`, `restart`, `pause`, `back`); defaults offline |
-| Leaderboards | No | clients cannot submit and no game script reports scores; scores are local bests inside the cloud-saved doc |
+| Leaderboards | Yes (hosted) | every finished game against the AI (practice, journey, daily, challenge; not pass-and-play or lessons) posts its score through `StarHermit.submitScores` — a practice session whose `score-script.js` posts it to the `high-score` board (integer, higher is better, 0–10,000) — and the results sheet shows "Leaderboard rank: #N" (or "Score posted…" / "Score not posted…") under the breakdown. Local bests stay in the cloud-saved doc |
 | Achievements | Local | five flags in `store.achievements`, synced inside the cloud-saved doc; no platform unlock path |
-| Sessions, invitations, matchmaking, chat | No | Two-player mode is pass-and-play on one device; `server.js` is a CommonJS static host, not a Jint game script |
+| Sessions, invitations, matchmaking, chat | No | Two-player mode is pass-and-play on one device; `score-script.js` only accepts leaderboard results; `server.js` is a CommonJS local static host |
 | Platform time | No | Daily uses the client's UTC date |
 
-Account-surface strings (sign-in, invite, confirmations, sign-out notice) are localized in all nine locales by `js/platform-i18n.js`, chosen like the Graphics panel. Without a launch token no request is made.
+Account-surface strings (sign-in, invite, confirmations, sign-out notice, leaderboard line) are localized in all nine locales by `js/platform-i18n.js`, chosen like the Graphics panel. Without a launch token no request is made.
 
 ## 13. Technical architecture
 
@@ -280,7 +281,7 @@ Account-surface strings (sign-in, invite, confirmations, sign-out notice) are lo
 
 - English only (section 10), except the Graphics settings section, which picks en-US, en-GB, es-419, es-ES, de-DE, fr-FR, fr-CA, pt-BR or it-IT from `navigator.languages`.
 - Switching anti-aliasing away from MSAA when the canvas was created with MSAA leaves the canvas's own multisampling on until a reload (the panel says so).
-- `server=server.js` is declared but the script is a static host; nothing about a game is authoritative or shared. Two-player play is same-device only.
+- The platform script `score-script.js` only range-checks posted scores; nothing about a game is authoritative or shared. Two-player play is same-device only.
 - Achievements are stored but no screen lists them; the only visible progress is the title stats line, journey stars and challenge bests.
 - Cloud sync and the account name only appear when the game is launched with a StarHermit token; plain local play stays local-only.
 - `THEMES[].unlockStars` is never read: themes are assigned by content, not unlocked.

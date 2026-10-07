@@ -462,6 +462,25 @@
     setResultsArt(head.cls === 'win' ? 'win' : head.cls === 'loss' ? 'lose' : '');
     openOverlay('overlay-results');
     announce(head.text + '. Score ' + st.score.total + '.');
+    postToLeaderboard(st.score.total);
+  }
+
+  // Hosted play only: post a finished game against the AI (practice, journey,
+  // daily, challenge — not pass-and-play or lessons) to the platform high-score
+  // board and show the player's rank on the results sheet.
+  function postToLeaderboard(total) {
+    var line = $('res-lb');
+    if (!line) return;
+    line.hidden = true;
+    if (!Platform || !Platform.hosted || session.aiLevel <= 0 || session.cfg.kind === 'lesson') return;
+    var ps = root.FFPlatformStrings();
+    var forSession = session;
+    line.hidden = false;
+    line.textContent = ps.lbPosting;
+    Platform.submitScore(total).then(function (r) {
+      if (session !== forSession) return;
+      line.textContent = !r.posted ? ps.lbFailed : r.rank ? ps.lbRank.replace('{rank}', r.rank) : ps.lbPosted;
+    });
   }
 
   // Results illustration (assets/results-*.webp). Purely decorative: hidden

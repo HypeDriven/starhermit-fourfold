@@ -151,6 +151,19 @@
     keys: function () { return keys; },
     patchSettings: function (obj) { return online() ? sh.patchSettings(obj) : Promise.resolve(null); },
     signIn: function () { return !!(sh && sh.signIn()); },
-    inviteLink: function () { return online() ? sh.inviteLink() : null; }
+    inviteLink: function () { return online() ? sh.inviteLink() : null; },
+    get hosted() { return online(); },
+    // Post a finished game to the high-score board (score-script.js); resolves
+    // { posted, rank } — rank on that board, or null.
+    submitScore: function (total) {
+      if (!online()) return Promise.resolve({ posted: false, rank: null });
+      return sh.submitScores({ 'high-score': total }).then(function (keys) {
+        if (keys.indexOf('high-score') < 0) return { posted: false, rank: null };
+        return sh.leaderboard('high-score', { pageSize: 100 }).then(function (r) {
+          var me = (r.items || []).filter(function (i) { return i.userId === sh.userId; })[0];
+          return { posted: true, rank: me ? me.rank : null };
+        }, function () { return { posted: true, rank: null }; });
+      });
+    }
   };
 })(typeof self !== 'undefined' ? self : this);
