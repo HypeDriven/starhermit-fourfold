@@ -68,9 +68,14 @@
   var docProvider = null;   // () => string  (the local progress document as JSON)
   var docApplied = null;    // (obj) => bool (adopt a remote document locally)
   var lastPushed = null;
+  // While the start-up pull runs nothing is queued: a stale local doc queued
+  // then would still be PUT after the remote one is adopted. A held push is
+  // replayed once the pull settles, with the doc as it stands after adoption.
+  var pulling = false, pushHeld = false;
 
   function schedulePush() {
     if (!online() || !docProvider) return;
+    if (pulling) { pushHeld = true; return; }
     var json = docProvider();
     if (json === lastPushed) return;
     lastPushed = json;
@@ -85,21 +90,25 @@
   function pull() {
     if (!online()) return Promise.resolve(false);
     setStatus('loading');
+    pulling = true;
     return sh.saveInfo().then(function (info) {
       if (info && info.exists === false) return null;
       return sh.loadJSON();
     }).then(function (doc) {
+      pulling = false;
       if (doc) {
         if (docApplied) docApplied(doc);
         lastPushed = docProvider ? docProvider() : null;
         setStatus('synced');
+        if (pushHeld) { pushHeld = false; schedulePush(); }
         return true;
       }
       // No remote save yet: upload the local document as the first save.
+      pushHeld = false;
       setStatus('synced');
       schedulePush();
       return false;
-    }, function () { setStatus('offline'); return false; });
+    }, function () { pulling = false; setStatus('offline'); if (pushHeld) { pushHeld = false; schedulePush(); } return false; });
   }
 
   if (root.addEventListener) {
