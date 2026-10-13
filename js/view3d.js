@@ -994,8 +994,8 @@ function createThreeView(canvas, opts) {
     if (k !== postKey) { postKey = k; buildPost(cw, ch); }
     scene.background = composer ? bgPost : bgRaw;
     if (composer) {
-      try { composer.render(dt); } catch (e) { postFailed = true; disposePost(); renderer.render(scene, camera); }
-    } else renderer.render(scene, camera);
+      try { (globalThis.GameOptions ? globalThis.GameOptions.draw(composer.renderer, () => composer.render(dt)) : composer.render(dt)); } catch (e) { postFailed = true; disposePost(); (globalThis.GameOptions ? globalThis.GameOptions.draw(renderer, () => renderer.render(scene, camera)) : renderer.render(scene, camera)); }
+    } else (globalThis.GameOptions ? globalThis.GameOptions.draw(renderer, () => renderer.render(scene, camera)) : renderer.render(scene, camera));
   }
 
   rebuild(7, 6);

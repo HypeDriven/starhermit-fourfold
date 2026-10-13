@@ -92,7 +92,7 @@
   }
 
   function playBuffer(buf) {
-    var src = ctx.createBufferSource();
+    var src = (globalThis.GameOptions ? globalThis.GameOptions.trackSource(ctx.createBufferSource(), null) : ctx.createBufferSource());
     src.buffer = buf;
     src.connect(fxBus);
     src.start();
@@ -102,7 +102,7 @@
 
   function tone(freq, dur, type, peak, when) {
     var t = ctx.currentTime + (when || 0);
-    var osc = ctx.createOscillator();
+    var osc = (globalThis.GameOptions ? globalThis.GameOptions.trackSource(ctx.createOscillator(), null) : ctx.createOscillator());
     var g = ctx.createGain();
     osc.type = type || 'sine';
     osc.frequency.value = freq;
@@ -121,7 +121,7 @@
     var buf = ctx.createBuffer(1, len, ctx.sampleRate);
     var data = buf.getChannelData(0);
     for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
-    var src = ctx.createBufferSource();
+    var src = (globalThis.GameOptions ? globalThis.GameOptions.trackSource(ctx.createBufferSource(), null) : ctx.createBufferSource());
     src.buffer = buf;
     var f = ctx.createBiquadFilter();
     f.type = 'lowpass';
