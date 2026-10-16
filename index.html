@@ -15,6 +15,10 @@
     "three/addons/": "./vendor/three/addons/"
 } }
 </script>
+<script src="sh-language.js"></script>
+<script src="js/i18n/strings.js"></script>
+<script src="js/i18n/strings-content.js"></script>
+<script src="js/i18n/i18n.js"></script>
 <script src="js/rng.js"></script>
 <script src="js/rules.js"></script>
 <script src="js/content.js"></script>
@@ -29,7 +33,7 @@
 <body>
 
 <header class="app-header">
-  <h1><span class="mark">▮</span> Fourfold</h1>
+  <h1 data-i18n-skip><span class="mark">▮</span> Fourfold</h1>
   <span class="acct" id="hdr-acct" hidden></span>
   <button type="button" class="icon ghost" data-goto="help" aria-label="Help and rules">?</button>
   <button type="button" class="icon ghost" data-goto="settings" aria-label="Settings">⚙</button>
@@ -176,9 +180,9 @@
         <legend>Controls</legend>
         <ul style="padding-left:1.2em">
           <li>Click or tap a column to drop.</li>
-          <li><b>← →</b> move between columns, <b>Enter</b> or <b>Space</b> drops.</li>
-          <li><b>1–9</b> drop straight into that column number.</li>
-          <li><b>U</b> undo, <b>H</b> hint, <b>R</b> restart, <b>P</b> or <b>Esc</b> pause.</li>
+          <li>← → move between columns; Enter or Space drops.</li>
+          <li>1–9 drop straight into that column number.</li>
+          <li>U undo, H hint, R restart, P or Esc pause.</li>
         </ul>
       </fieldset>
       <fieldset>

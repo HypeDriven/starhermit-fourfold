@@ -14,6 +14,14 @@
   var Rules = root.FFRules, AI = root.FFAI, Content = root.FFContent, Sfx = root.FFSfx;
   var Platform = root.FFPlatform;
 
+  // Localization (js/i18n/i18n.js): T() translates an English key with
+  // {placeholders}; N() marks text the DOM observer translates on its own.
+  function T(key, vars) {
+    if (root.FFI18N) return root.FFI18N.T(key, vars);
+    return String(key).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? String(vars[k]) : m; });
+  }
+  function N(key) { return key; }
+
   var STORE_KEY = 'fourfold.v1';
   var STORE_VERSION = 1;
   var AI_DELAY_MS = 420;
@@ -80,6 +88,47 @@
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
+  // Two devices saved diverging documents: keep the best of each. Stars and
+  // challenge bests take the maximum, lessons / achievements / dailies are
+  // united (the higher daily score wins a date), counters take the larger
+  // value, and this device keeps its settings and its game in progress.
+  function mergeStores(remote, local) {
+    var a = mergeDoc(clone(DEFAULT_STORE), remote || {}), b = local || clone(DEFAULT_STORE);
+    var out = clone(b);
+    var num = function (x) { return typeof x === 'number' && isFinite(x) ? x : 0; };
+    var keys = function (x, y) { return Object.keys(Object.assign({}, x || {}, y || {})); };
+    out.journey = {};
+    keys(a.journey, b.journey).forEach(function (k) { out.journey[k] = Math.max(num(a.journey[k]), num(b.journey[k])); });
+    out.challenges = {};
+    keys(a.challenges, b.challenges).forEach(function (k) { out.challenges[k] = Math.max(num(a.challenges[k]), num(b.challenges[k])); });
+    out.lessons = Object.assign({}, a.lessons, b.lessons);
+    out.achievements = Object.assign({}, a.achievements, b.achievements);
+    out.daily = {};
+    keys(a.daily, b.daily).forEach(function (k) {
+      var x = a.daily[k], y = b.daily[k];
+      out.daily[k] = clone(!x ? y : !y ? x : num(y.score) >= num(x.score) ? y : x);
+    });
+    out.stats = {};
+    ['played', 'wins', 'bestStreak'].forEach(function (k) { out.stats[k] = Math.max(num(a.stats[k]), num(b.stats[k])); });
+    out.stats.streak = num(b.stats.streak);
+    out.save = b.save || a.save || null;
+    out.v = STORE_VERSION;
+    return out;
+  }
+
+  // A conditional cloud write lost to another device: merge the reloaded
+  // remote document into the local store, adopt it, and let the platform
+  // adapter save the merge again.
+  function mergeRemoteStore(doc) {
+    if (!doc || typeof doc !== 'object' || doc.v !== STORE_VERSION) return false;
+    store = mergeStores(doc, store);
+    writeStore();
+    applySettings();
+    refreshTitle();
+    if (session) render();
+    return true;
+  }
+
   var store = loadStore();
 
   // ---------- dom helpers ----------
@@ -113,7 +162,7 @@
     var pl = Content.PLAYERS[p] || Content.PLAYERS[1];
     return store.settings.highContrast ? pl.colorHC : pl.color;
   }
-  function playerName(p) { return (Content.PLAYERS[p] || {}).name || ('Player ' + p); }
+  function playerName(p) { var n = (Content.PLAYERS[p] || {}).name; return n ? T(n) : T('Player {n}', { n: p }); }
   function playerIcon(p) { return (Content.PLAYERS[p] || {}).icon || '●'; }
 
   // Config resolution from a stable key, so saves survive a reload.
@@ -170,7 +219,7 @@
     stopAI();
     var state;
     try { state = Rules.createGame(cfg); }
-    catch (e) { announce('Could not start: ' + e.message, true); showScreen('title'); return; }
+    catch (e) { announce(T('Could not start: {error}', { error: e.message }), true); showScreen('title'); return; }
 
     session = {
       key: key,
@@ -206,7 +255,7 @@
     resumeClock();
     render();
     if (cfg.intro || (cfg.lesson && cfg.lesson.text)) {
-      setStatus(cfg.lesson ? cfg.lesson.text : cfg.intro);
+      setStatus(T(cfg.lesson ? cfg.lesson.text : cfg.intro));
     } else {
       setStatus('');
     }
@@ -263,7 +312,7 @@
     var lesson = session.cfg.lesson;
     if (lesson && lesson.onlyCols && lesson.onlyCols.indexOf(col) === -1) {
       Sfx.play('bad-column');
-      announce('This lesson wants column ' + (lesson.onlyCols[0] + 1) + '.', true);
+      announce(T('This lesson wants column {n}.', { n: lesson.onlyCols[0] + 1 }), true);
       return;
     }
     applyDrop(col);
@@ -290,12 +339,12 @@
 
   function reasonText(reason) {
     var map = {};
-    map[Rules.INVALID.FULL_COL] = 'That column is full.';
-    map[Rules.INVALID.BANNED] = 'That column is sealed this round.';
-    map[Rules.INVALID.BAD_COL] = 'That column is off the board.';
-    map[Rules.INVALID.TURN] = 'Not your turn yet.';
-    map[Rules.INVALID.ENDED] = 'This game is over.';
-    return map[reason] || 'That move is not allowed.';
+    map[Rules.INVALID.FULL_COL] = N('That column is full.');
+    map[Rules.INVALID.BANNED] = N('That column is sealed this round.');
+    map[Rules.INVALID.BAD_COL] = N('That column is off the board.');
+    map[Rules.INVALID.TURN] = N('Not your turn yet.');
+    map[Rules.INVALID.ENDED] = N('This game is over.');
+    return T(map[reason] || 'That move is not allowed.');
   }
 
   function maybeAI() {
@@ -323,7 +372,7 @@
 
   function undo() {
     if (!session || session.over || session.paused) return;
-    if (!session.cfg.mechanics.undo) { announce('Undo is disabled in this mode.', true); return; }
+    if (!session.cfg.mechanics.undo) { announce(T('Undo is disabled in this mode.'), true); return; }
     stopAI();
     // Step back to the most recent position where the local player is to move.
     var steps = 0;
@@ -332,28 +381,28 @@
       steps++;
       if (session.state.current === 1 || session.aiLevel === 0) break;
     }
-    if (!steps) { announce('Nothing to undo.'); return; }
+    if (!steps) { announce(T('Nothing to undo.')); return; }
     Sfx.play('undo');
     session.hintCol = -1;
     if (session.lessonDrops.length) session.lessonDrops.pop();
     view.clearAnims();
     render();
     persistSave();
-    announce('Undid ' + steps + (steps === 1 ? ' drop.' : ' drops.'));
+    announce(steps === 1 ? T('Undid 1 drop.') : T('Undid {n} drops.', { n: steps }));
     maybeAI();
   }
 
   function hint() {
     if (!session || session.over || session.paused) return;
-    if (!session.cfg.mechanics.hint) { announce('Hints are disabled in this mode.', true); return; }
+    if (!session.cfg.mechanics.hint) { announce(T('Hints are disabled in this mode.'), true); return; }
     if (session.state.current !== 1 && session.aiLevel > 0) return;
     var col;
     try { col = AI.suggestMove(session.state, session.rng); } catch (e) { col = -1; }
-    if (col == null || col < 0) { announce('No hint available.'); return; }
+    if (col == null || col < 0) { announce(T('No hint available.')); return; }
     session.hintCol = col;
     Sfx.play('hint');
     render();
-    announce('Hint: column ' + (col + 1) + '.');
+    announce(T('Hint: column {n}.', { n: col + 1 }));
   }
 
   function resign() {
@@ -417,13 +466,13 @@
 
   function outcomeHeadline(st) {
     var t = st.terminal;
-    if (!t) return { text: 'Game paused', cls: '' };
-    if (t.reason === Rules.TERMINAL.FULL) return { text: 'Board full — a draw', cls: '' };
-    if (t.winner === 1) return { text: 'You made four', cls: 'win' };
-    if (t.reason === Rules.TERMINAL.RESIGN) return { text: 'You resigned', cls: 'loss' };
-    if (t.reason === Rules.TERMINAL.TIME) return { text: 'Time up', cls: 'loss' };
-    if (t.reason === Rules.TERMINAL.MOVES) return { text: 'Drop budget spent', cls: 'loss' };
-    return { text: playerName(t.winner) + ' made four', cls: 'loss' };
+    if (!t) return { text: T('Game paused'), cls: '' };
+    if (t.reason === Rules.TERMINAL.FULL) return { text: T('Board full — a draw'), cls: '' };
+    if (t.winner === 1) return { text: T('You made four'), cls: 'win' };
+    if (t.reason === Rules.TERMINAL.RESIGN) return { text: T('You resigned'), cls: 'loss' };
+    if (t.reason === Rules.TERMINAL.TIME) return { text: T('Time up'), cls: 'loss' };
+    if (t.reason === Rules.TERMINAL.MOVES) return { text: T('Drop budget spent'), cls: 'loss' };
+    return { text: T('{name} made four', { name: playerName(t.winner) }), cls: 'loss' };
   }
 
   function showResults() {
@@ -440,28 +489,28 @@
     clear(dl);
     var comp = st.score.components;
     var rows = [
-      ['Line completed', comp.win],
-      ['Draw', comp.draw],
-      ['Under par drops', comp.parMoves],
-      ['Speed bonus', comp.speed]
+      [N('Line completed'), comp.win],
+      [N('Draw'), comp.draw],
+      [N('Under par drops'), comp.parMoves],
+      [N('Speed bonus'), comp.speed]
     ].filter(function (r) { return r[1] > 0; });
-    rows.push(['Your drops', st.dropsBy[1]]);
-    rows.push(['Time', formatTime(elapsedMs())]);
+    rows.push([N('Your drops'), st.dropsBy[1]]);
+    rows.push([N('Time'), formatTime(elapsedMs())]);
     rows.forEach(function (r) {
       dl.appendChild(el('dt', null, r[0]));
       dl.appendChild(el('dd', null, String(r[1])));
     });
-    dl.appendChild(el('dt', 'total', 'Score'));
+    dl.appendChild(el('dt', 'total', N('Score')));
     dl.appendChild(el('dd', 'total', String(st.score.total)));
 
     var next = nextStage();
     var btn = $('res-next');
     btn.hidden = !next;
-    if (next) btn.textContent = 'Next: ' + next.name;
+    if (next) btn.textContent = T('Next: {name}', { name: T(next.name) });
 
     setResultsArt(head.cls === 'win' ? 'win' : head.cls === 'loss' ? 'lose' : '');
     openOverlay('overlay-results');
-    announce(head.text + '. Score ' + st.score.total + '.');
+    announce(T('{headline}. Score {n}.', { headline: head.text, n: st.score.total }));
     postToLeaderboard(st.score.total);
   }
 
@@ -521,14 +570,14 @@
     store.save = null;
     saveStore();
     Sfx.play('lesson-complete');
-    $('res-headline').textContent = 'Lesson complete';
+    $('res-headline').textContent = N('Lesson complete');
     $('res-headline').className = 'headline win';
     $('res-stars').textContent = '';
     clear($('res-breakdown'));
     $('res-next').hidden = true;
     setResultsArt('win');
     openOverlay('overlay-results');
-    announce('Lesson complete.');
+    announce(T('Lesson complete.'));
     return true;
   }
 
@@ -574,9 +623,9 @@
     chip.style.background = hex(playerColor(p));
     chip.textContent = playerIcon(p);
     if (st.terminal) label.textContent = outcomeHeadline(st).text;
-    else if (session.aiLevel === 0) label.textContent = playerName(st.current) === 'You' ? 'Your turn' : playerName(st.current) + '’s turn';
-    else if (st.current === 1) label.textContent = 'Your turn';
-    else label.textContent = playerName(st.current) + ' is thinking…';
+    else if (session.aiLevel === 0) label.textContent = st.current === 1 ? T('Your turn') : T('{name}’s turn', { name: playerName(st.current) });
+    else if (st.current === 1) label.textContent = T('Your turn');
+    else label.textContent = T('{name} is thinking…', { name: playerName(st.current) });
   }
 
   function formatTime(ms) {
@@ -602,11 +651,11 @@
 
   function objectiveText() {
     var cfg = session.cfg;
-    var goal = 'Connect ' + cfg.connect + ' of your discs in a row.';
-    if (cfg.lesson) return cfg.lesson.text;
-    if (cfg.kind === 'challenge') return goal + ' ' + (cfg.blurb || '');
-    if (cfg.moveLimit > 0) return goal + ' Within ' + cfg.moveLimit + ' of your drops.';
-    if (cfg.timeLimitSec > 0) return goal + ' Within ' + cfg.timeLimitSec + ' seconds.';
+    var goal = T('Connect {n} of your discs in a row.', { n: cfg.connect });
+    if (cfg.lesson) return T(cfg.lesson.text);
+    if (cfg.kind === 'challenge') return goal + ' ' + (cfg.blurb ? T(cfg.blurb) : '');
+    if (cfg.moveLimit > 0) return goal + ' ' + T('Within {n} of your drops.', { n: cfg.moveLimit });
+    if (cfg.timeLimitSec > 0) return goal + ' ' + T('Within {n} seconds.', { n: cfg.timeLimitSec });
     return goal;
   }
 
@@ -636,11 +685,11 @@
       var isBanned = banned.indexOf(col) !== -1;
       var mine = st.current === 1 || session.aiLevel === 0;
       btn.disabled = !!st.terminal || full || isBanned || !mine;
-      var desc = 'Column ' + (col + 1) + ', ' + st.heights[col] + ' of ' + st.rows + ' filled';
-      if (isBanned) desc += ', sealed';
-      else if (full) desc += ', full';
-      else desc += ', drops into row ' + (st.heights[col] + 1);
-      if (session.hintCol === col) desc += ' (hint)';
+      var dv = { n: col + 1, filled: st.heights[col], rows: st.rows, row: st.heights[col] + 1 };
+      var desc = isBanned ? T('Column {n}, {filled} of {rows} filled, sealed', dv)
+        : full ? T('Column {n}, {filled} of {rows} filled, full', dv)
+          : T('Column {n}, {filled} of {rows} filled, drops into row {row}', dv);
+      if (session.hintCol === col) desc += ' ' + T('(hint)');
       btn.setAttribute('aria-label', desc);
       btn.style.borderColor = session.hintCol === col ? hex(playerColor(1)) : 'transparent';
     }
@@ -653,9 +702,9 @@
       var cells = [];
       for (var c = 0; c < st.cols; c++) {
         var v = Rules.cellAt(st, c, r);
-        cells.push(v ? playerName(v) : 'empty');
+        cells.push(v ? playerName(v) : T('empty'));
       }
-      lines.push('Row ' + (r + 1) + ': ' + cells.join(', '));
+      lines.push(T('Row {n}: {cells}', { n: r + 1, cells: cells.join(', ') }));
     }
     $('grid-mirror').textContent = lines.join('. ');
   }
@@ -670,11 +719,11 @@
   // ---------- account & sync status ----------
 
   var SYNC_TEXT = {
-    loading: 'Syncing…',
-    saving: 'Saving…',
-    synced: 'Cloud saved',
-    offline: 'Cloud unreachable — progress stays on this device',
-    error: 'Cloud sync failed — will retry'
+    loading: N('Syncing…'),
+    saving: N('Saving…'),
+    synced: N('Cloud saved'),
+    offline: N('Cloud unreachable — progress stays on this device'),
+    error: N('Cloud sync failed — will retry')
   };
 
   // The account nickname sits in the header next to the wordmark; the
@@ -695,12 +744,12 @@
     if (st.online) {
       acct.hidden = false;
       acct.textContent = st.nickname;
-      line.textContent = 'Signed in as ' + st.nickname + ' · ' + (SYNC_TEXT[st.status] || st.status);
-      wipe.textContent = 'Erase progress on this device and in the cloud';
+      line.textContent = T('Signed in as {name} · {sync}', { name: st.nickname, sync: T(SYNC_TEXT[st.status] || st.status) });
+      wipe.textContent = N('Erase progress on this device and in the cloud');
     } else {
       acct.hidden = true;
-      line.textContent = 'Progress is stored only in this browser.';
-      wipe.textContent = 'Erase progress on this device';
+      line.textContent = N('Progress is stored only in this browser.');
+      wipe.textContent = N('Erase progress on this device');
     }
   }
 
@@ -759,13 +808,13 @@
   function refreshTitle() {
     var totalStars = Object.keys(store.journey).reduce(function (a, k) { return a + store.journey[k]; }, 0);
     $('title-stats').textContent = store.stats.played
-      ? store.stats.played + ' games · ' + store.stats.wins + ' wins · ' + totalStars + ' stars'
-      : 'New player — start with Learn or Play.';
+      ? T('{games} games · {wins} wins · {stars} stars', { games: store.stats.played, wins: store.stats.wins, stars: totalStars })
+      : N('New player — start with Learn or Play.');
     var resume = $('btn-resume');
     resume.hidden = !store.save;
     if (store.save) {
       var cfg = configFor(store.save.key, store.save.seed);
-      resume.textContent = 'Resume ' + ((cfg && cfg.name) || 'game');
+      resume.textContent = cfg && cfg.name ? T('Resume {name}', { name: T(cfg.name) }) : T('Resume game');
     }
   }
 
@@ -778,12 +827,12 @@
       var open = idx === 0 || unlocked;
       var b = el('button', 'card' + (l.mastery ? ' mastery' : ''));
       b.type = 'button';
-      b.appendChild(el('span', 'title', (idx + 1) + '. ' + l.name));
+      b.appendChild(el('span', 'title', (idx + 1) + '. ' + T(l.name)));
       b.appendChild(el('span', 'stars', '★'.repeat(stars) + '☆'.repeat(3 - stars)));
       if (!open) {
         b.disabled = true;
         b.setAttribute('aria-disabled', 'true');
-        b.appendChild(el('span', 'sub', 'Locked'));
+        b.appendChild(el('span', 'sub', N('Locked')));
       } else {
         b.addEventListener('click', function () { startSession('journey:' + l.id); });
       }
@@ -807,20 +856,20 @@
 
   function buildPractice() {
     buildList($('practice-list'), Content.PRACTICE.map(function (p) {
-      return { id: p.id, title: p.name, sub: p.blurb };
+      return { id: p.id, title: T(p.name), sub: T(p.blurb) };
     }), function (it) { startSession('practice:' + it.id); });
   }
 
   function buildChallenges() {
     buildList($('challenge-list'), Content.CHALLENGES.map(function (c) {
       var best = store.challenges[c.id];
-      return { id: c.id, title: c.name, sub: c.blurb + (best ? ' · best ' + best : '') };
+      return { id: c.id, title: T(c.name), sub: T(c.blurb) + (best ? ' · ' + T('best {n}', { n: best }) : '') };
     }), function (it) { startSession('challenge:' + it.id); });
   }
 
   function buildLearn() {
     buildList($('learn-list'), Content.LESSONS.map(function (l) {
-      return { id: l.id, title: l.title, sub: (store.lessons[l.id] ? '✓ done · ' : '') + l.text };
+      return { id: l.id, title: T(l.title), sub: (store.lessons[l.id] ? '✓ ' + T('done') + ' · ' : '') + T(l.text) };
     }), function (it) { startSession('lesson:' + it.id); });
   }
 
@@ -829,7 +878,7 @@
   function startDaily() {
     var d = todayUTC();
     var done = store.daily[d];
-    if (done) announce('You already played today’s board. Replaying for practice.');
+    if (done) announce(T('You already played today’s board. Replaying for practice.'));
     startSession('daily:' + d);
   }
 
@@ -901,12 +950,12 @@
       });
     });
     $('set-reset').addEventListener('click', function () {
-      if (!root.confirm('Erase all Fourfold progress on this device?')) return;
+      if (!root.confirm(T('Erase all Fourfold progress on this device?'))) return;
       store = clone(DEFAULT_STORE);
       saveStore();
       applySettings();
       refreshTitle();
-      announce('Progress erased.');
+      announce(T('Progress erased.'));
     });
   }
 
@@ -1046,11 +1095,27 @@
     applySettings();
     showScreen('title');
 
+    // The game language changed (Settings › Language or the account preference
+    // arriving): static text re-translates in place (js/i18n); rebuild what
+    // code wrote. A game in progress keeps its state.
+    document.addEventListener('ff-language', function () {
+      refreshTitle();
+      updateAccountUI();
+      if (session) render();
+      var active = document.querySelector('.screen.active');
+      var id = active && active.id.replace('screen-', '');
+      if (id === 'journey') buildJourney();
+      if (id === 'practice') buildPractice();
+      if (id === 'challenges') buildChallenges();
+      if (id === 'learn') buildLearn();
+    });
+
     if (Platform) {
       Platform.onChange(updateAccountUI);
       Platform.init({
         doc: function () { return JSON.stringify(store); },
         applyRemote: adoptRemoteStore,
+        mergeRemote: mergeRemoteStore,
         applySettings: adoptRemoteSettings,
         applyKeys: function (b) { keyBindings = b; }
       });
@@ -1065,5 +1130,5 @@
     root.__ffReady = true;
   }
 
-  root.FFUI = { boot: boot };
+  root.FFUI = { boot: boot, mergeStores: mergeStores };
 })(typeof self !== 'undefined' ? self : this);

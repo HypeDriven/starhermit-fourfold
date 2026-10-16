@@ -1,6 +1,6 @@
 /* Fourfold — localized strings for the StarHermit account surface (sign-in,
- * invite link, sign-out notice). Locale chosen from navigator.languages with
- * the same rules as the Graphics panel. Exposes window.FFPlatformStrings(). */
+ * invite link, sign-out notice) in the game language (js/i18n; window.FFI18N),
+ * picked with the same rules as the Graphics panel. Exposes window.FFPlatformStrings(). */
 (function (root) {
   'use strict';
   var EN = {
@@ -35,7 +35,7 @@
   }
   root.FFPlatformStrings = function (tags) {
     var nav = root.navigator || {};
-    var list = tags || (nav.languages && nav.languages.length ? nav.languages : [nav.language || 'en-US']);
+    var list = tags || (root.FFI18N ? [root.FFI18N.lang] : nav.languages && nav.languages.length ? nav.languages : [nav.language || 'en-US']);
     var table = STRINGS[pick(list)], out = {};
     for (var key in EN) out[key] = table[key] || EN[key];
     return out;

@@ -61,12 +61,22 @@
     sh.on('saved', function (ok) { setStatus(ok ? 'synced' : 'error'); });
     // Renewal refused: local play continues; the UI re-offers sign-in.
     sh.on('auth', function (a) { if (!a.signedIn) { status = 'offline'; emit(); } });
+    // Another device saved since our last read: the conditional write was
+    // refused and writes stay blocked until a reload. Reload, merge, save again.
+    sh.on('saveconflict', function () {
+      sh.loadJSON().then(function (doc) {
+        if (doc && docMerge) docMerge(doc);
+        lastPushed = null;
+        if (!sh.saveConflicted()) schedulePush(); else setStatus('error');
+      });
+    });
   }
 
-  // ---------- cloud save (slot game:<slug>, remote wins on load) ----------
+  // ---------- cloud save (slot game:<slug>; remote merged into local on load and on conflict) ----------
 
   var docProvider = null;   // () => string  (the local progress document as JSON)
   var docApplied = null;    // (obj) => bool (adopt a remote document locally)
+  var docMerge = null;      // (obj) => bool (merge a remote document into the local one)
   var lastPushed = null;
   // While the start-up pull runs nothing is queued: a stale local doc queued
   // then would still be PUT after the remote one is adopted. A held push is
@@ -91,14 +101,19 @@
     if (!online()) return Promise.resolve(false);
     setStatus('loading');
     pulling = true;
-    return sh.saveInfo().then(function (info) {
-      if (info && info.exists === false) return null;
-      return sh.loadJSON();
-    }).then(function (doc) {
+    // loadJSON() checks the slot info itself (empty → null) and records the
+    // slot version, so every later write is conditional on it.
+    return sh.loadJSON().then(function (doc) {
       pulling = false;
       if (doc) {
-        if (docApplied) docApplied(doc);
-        lastPushed = docProvider ? docProvider() : null;
+        // Merge rather than replace, so progress made offline on this device survives.
+        if (docMerge) {
+          docMerge(doc);
+          lastPushed = JSON.stringify(doc);   // unchanged by the merge → nothing to send
+          schedulePush();
+        }
+        else if (docApplied) docApplied(doc);
+        if (!docMerge) lastPushed = docProvider ? docProvider() : null;
         setStatus('synced');
         if (pushHeld) { pushHeld = false; schedulePush(); }
         return true;
@@ -126,6 +141,7 @@
   function init(hooks) {
     docProvider = hooks && hooks.doc || null;
     docApplied = hooks && hooks.applyRemote || null;
+    docMerge = hooks && hooks.mergeRemote || null;
     if (!online()) { emit(); return Promise.resolve(false); }
     sh.profile().then(function (p) { nickname = p && p.displayName || ''; emit(); });
     sh.loadBindings(DEFAULT_KEYS).then(function (b) {

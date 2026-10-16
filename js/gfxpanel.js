@@ -2,8 +2,9 @@
  *
  * Builds the controls into #set-gfx-fieldset, persists choices under the
  * `fourfold.gfx` localStorage key (device-specific, so not cloud-synced with
- * progress) and applies them live through view.setGraphics(). The rest of the
- * game ships in English; this panel is localized from navigator.language.
+ * progress) and applies them live through view.setGraphics(). Its strings
+ * follow the game language (js/i18n; window.FFI18N) and relabel in place on
+ * `ff-language`; the rest of the UI is translated in js/i18n.
  */
 import { PRESETS, CATEGORIES, presetTier, choosePreset } from './gfx.js';
 import { loadGraphics, saveGraphics } from './view3d.js';
@@ -133,38 +134,41 @@ function el(tag, attrs, kids) {
 export function initGraphicsPanel(getView) {
   const box = document.getElementById('set-gfx-fieldset');
   if (!box) return;
-  const langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
-  const locale = pickLocale(langs);
-  const S = stringsFor(locale);
+  const gameLocale = () => pickLocale(window.FFI18N ? [window.FFI18N.lang]
+    : navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]);
+  let locale = gameLocale();
+  let S = stringsFor(locale);
+  const labels = []; // [node, () => text] relabelled on a language change
+  const label = (node, get) => { labels.push([node, get]); node.textContent = get(); return node; };
   const tier = (t) => S.tiers[t] || t;
   const fill = (s, t) => s.replace('{t}', t);
   let saved = loadGraphics();
 
   box.lang = locale;
   box.textContent = '';
-  box.appendChild(el('legend', { text: S.legend }));
+  box.appendChild(label(el('legend'), () => S.legend));
 
   const preset = el('select', { id: 'gfx-preset', 'data-gfx': 'preset' });
-  box.appendChild(el('label', { class: 'field', for: 'gfx-preset' }, [el('span', { text: S.quality }), preset]));
+  box.appendChild(el('label', { class: 'field', for: 'gfx-preset' }, [label(el('span'), () => S.quality), preset]));
 
   const scale = el('input', { type: 'range', id: 'gfx-scale', min: '50', max: '200', step: '5', 'data-gfx': 'render_scale' });
   const scaleOut = el('output', { id: 'gfx-scale-out', for: 'gfx-scale' });
   box.appendChild(el('label', { class: 'slider', for: 'gfx-scale' }, [
-    el('span', { class: 'slider-head' }, [el('span', { text: S.scale }), scaleOut]), scale]));
+    el('span', { class: 'slider-head' }, [label(el('span'), () => S.scale), scaleOut]), scale]));
 
   const catSel = {};
   const grid = el('div', { class: 'gfx-cats' });
   for (const cat of Object.keys(CATEGORIES)) {
     const sel = el('select', { id: 'gfx-cat-' + cat, 'data-gfx-cat': cat });
     catSel[cat] = sel;
-    grid.appendChild(el('label', { class: 'field', for: sel.id }, [el('span', { text: S.cats[cat] }), sel]));
+    grid.appendChild(el('label', { class: 'field', for: sel.id }, [label(el('span'), () => S.cats[cat]), sel]));
   }
   box.appendChild(grid);
 
   const adaptive = el('input', { type: 'checkbox', id: 'gfx-adaptive', 'data-gfx': 'adaptive' });
   const fps = el('input', { type: 'checkbox', id: 'gfx-fps', 'data-gfx': 'show_fps' });
-  box.appendChild(el('label', { class: 'opt' }, [adaptive, document.createTextNode(' ' + S.adaptive)]));
-  box.appendChild(el('label', { class: 'opt' }, [fps, document.createTextNode(' ' + S.fps)]));
+  box.appendChild(el('label', { class: 'opt' }, [adaptive, label(document.createTextNode(''), () => ' ' + S.adaptive)]));
+  box.appendChild(el('label', { class: 'opt' }, [fps, label(document.createTextNode(''), () => ' ' + S.fps)]));
   const summary = el('p', { class: 'status-line', id: 'gfx-summary', 'aria-live': 'polite' });
   const note = el('p', { class: 'status-line gfx-note', id: 'gfx-note' });
   note.hidden = true;
@@ -238,6 +242,14 @@ export function initGraphicsPanel(getView) {
   }
   adaptive.addEventListener('change', () => { saved.adaptive = adaptive.checked; commit(); });
   fps.addEventListener('change', () => { saved.show_fps = fps.checked; commit(); });
+
+  document.addEventListener('ff-language', () => {
+    locale = gameLocale();
+    S = stringsFor(locale);
+    box.lang = locale;
+    for (const [node, get] of labels) node.textContent = get();
+    refresh();
+  });
 
   // Keep the GPU/cost line current whenever the Settings screen is shown.
   const screen = document.getElementById('screen-settings');

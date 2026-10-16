@@ -45,15 +45,21 @@ const MIME = {
 // StarHermit platform mocks for the signed-in pass; standalone passes must make no /api call.
 const apiLog = [];
 let mockSave = null;
+// Platform state the Language pass reads back.
+const mock = { language: 'en', settings: {}, reports: [] };
 function platformMock(req, res, url) {
   apiLog.push(`${req.method} ${url}`);
   const json = (b, st = 200) => { res.writeHead(st, { 'content-type': 'application/json' }); res.end(JSON.stringify(b)); };
+  const body = (fn) => { let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => fn(JSON.parse(b || '{}'))); };
+  if (url === '/api/v1/me/language') return json({ preferredLanguage: mock.language });
+  if (/\/settings\/[^/]+$/.test(url) && req.method === 'PUT') return body((b) => { mock.settings[url.split('/').pop()] = b.value; json({}); });
+  if (/\/reports$/.test(url) && req.method === 'POST') return body((b) => { mock.reports.push(b); json({ id: 'r1', kind: 'bug', status: 'open', createdAt: new Date().toISOString() }, 201); });
   if (url.endsWith('/profile')) return json({ username: 'raw', nickname: 'Columnist' });
-  if (url.endsWith('/settings') && req.method === 'GET') return json({ settings: { volume: 0.3 } });
+  if (url.endsWith('/settings') && req.method === 'GET') return json({ settings: { volume: 0.3, ...mock.settings } });
   if (url.endsWith('/settings')) return json({ settings: {} });
   if (url.endsWith('/controls')) return json({ actions: [{ action: 'undo', codes: ['KeyZ'] }] });
   if (url.endsWith('/cloud-saves/game:fourfold-test/info')) return json({ exists: false });
-  if (url.endsWith('/cloud-saves/game:fourfold-test') && req.method === 'PUT') { mockSave = true; return json({}); }
+  if (url.endsWith('/cloud-saves/game:fourfold-test') && req.method === 'PUT') { mockSave = true; return json({ etag: '"v' + apiLog.length + '"' }); }
   return json({ error: 'not found' }, 404);
 }
 
@@ -554,12 +560,110 @@ async function runSignedInPass() {
   }
 }
 
+// Language: with the StarHermit preferred language fr-CA, Automatic resolves to
+// fr-CA; choosing Italian in Settings re-renders in place and saves
+// ui.language; Report a problem posts a bug report; German fits the viewport;
+// a game in progress keeps its drops when the language changes from its pause menu.
+async function runLanguagePass(label, viewport, hasTouch) {
+  const errors = [];
+  const context = await browser.newContext({ viewport, hasTouch });
+  const page = await context.newPage();
+  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+  page.on('console', (m) => { if ((m.type() === 'error' || m.type() === 'warning') && !browserNoise.test(m.text())) errors.push(`console: ${m.text()}`); });
+  const shot = (stage) => `${process.env.SHOT_DIR || '/tmp'}/fourfold-e2e-${stage}-${label}.png`;
+  const b64u = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const token = 'h.' + b64u({ sub: 'u-disc-123456', game_scope: 'fourfold-test', exp: Math.floor(Date.now() / 1000) + 3600 }) + '.s';
+  const fits = (scope) => page.evaluate((sel) => {
+    if (document.documentElement.scrollWidth > window.innerWidth + 1) return 'page scrolls sideways';
+    const bad = [...document.querySelectorAll(`${sel} button, ${sel} h2, ${sel} legend, ${sel} label, ${sel} p, ${sel} span`)].find((el) => {
+      const r = el.getBoundingClientRect();
+      if (!r.width || !el.offsetParent || el.closest('.game-options-controls')) return false;
+      return r.right > window.innerWidth + 1 || r.left < -1;
+    });
+    return bad ? 'cut off: ' + bad.textContent.trim().slice(0, 80) : '';
+  }, scope);
+  mock.language = 'fr-CA'; mock.settings = {}; mock.reports = [];
+  try {
+    await page.goto('about:blank');
+    await page.goto(`${base}/#game_token=${token}`, { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__ffReady === true);
+    await page.waitForFunction(() => document.documentElement.lang === 'fr-CA', null, { timeout: 15000 });
+    await page.waitForFunction(() => document.getElementById('title-h').textContent === 'Alignez-en quatre');
+    await page.locator('.app-header [data-goto="settings"]').click();
+    const choice = page.locator('[data-game-language="choice"]');
+    await choice.scrollIntoViewIfNeeded();
+    const auto = await choice.locator('option').first().textContent();
+    if (!/^Automatique — Français \(Canada\)$/.test(auto)) throw new Error('Automatic label not resolved: ' + auto);
+    const select = await choice.elementHandle();
+    await choice.selectOption('it-IT');
+    await page.waitForFunction(() => document.documentElement.lang === 'it-IT');
+    await page.waitForFunction(() => /Salvato/.test(document.querySelector('[data-game-language="status"]').textContent));
+    if (mock.settings['ui.language']?.choice !== 'it-IT') throw new Error('ui.language not saved: ' + JSON.stringify(mock.settings));
+    if (await page.textContent('#settings-h') !== 'Impostazioni') throw new Error('settings heading not re-rendered');
+    if (!/Grafica/.test(await page.textContent('#set-gfx-fieldset legend'))) throw new Error('graphics legend not re-rendered');
+    if (!await select.evaluate((n) => n.isConnected)) throw new Error('shared Language select was redrawn');
+    await page.locator('[data-game-report="title"]').scrollIntoViewIfNeeded();
+    await page.fill('[data-game-report="title"]', 'Test report');
+    await page.click('[data-game-report="send"]');
+    await page.waitForFunction(() => /Grazie/.test(document.querySelector('[data-game-report="status"]').textContent));
+    if (mock.reports[0]?.kind !== 'bug') throw new Error('report not posted: ' + JSON.stringify(mock.reports));
+    await page.screenshot({ path: shot('language') });
+    await choice.selectOption('de-DE');
+    await page.waitForFunction(() => document.documentElement.lang === 'de-DE');
+    let fit = await fits('#screen-settings');
+    if (fit) throw new Error('German settings: ' + fit);
+    await page.screenshot({ path: shot('language-de-settings'), fullPage: true });
+    await page.locator('#screen-settings [data-goto="title"]').click();
+    fit = await fits('#screen-title');
+    if (fit) throw new Error('German title: ' + fit);
+    await page.screenshot({ path: shot('language-de-title'), fullPage: true });
+    // A game in progress keeps its drops across a language change from its pause menu.
+    await page.locator('#screen-title [data-goto="practice"]').click();
+    await page.getByRole('button', { name: /Lockere KI/ }).click();
+    await page.locator('#screen-play.active').waitFor();
+    await page.locator('#col-layer button').nth(3).click();
+    await waitForTurn(page);
+    if (await page.textContent('#turn-label') !== 'Du bist dran') throw new Error('HUD not in German');
+    fit = await fits('#screen-play');
+    if (fit) throw new Error('German HUD: ' + fit);
+    await page.screenshot({ path: shot('language-de-play') });
+    const drops = await page.evaluate(() => window.FFUI.getSession().state.drops.length);
+    await page.click('#btn-pause');
+    await page.click('#pause-settings');
+    await choice.scrollIntoViewIfNeeded();
+    await choice.selectOption('fr-FR');
+    await page.waitForFunction(() => document.documentElement.lang === 'fr-FR');
+    await page.locator('#screen-settings [data-goto="title"]').click();
+    await page.click('#btn-resume');
+    await page.locator('#screen-play.active').waitFor();
+    if (await page.textContent('#turn-label') !== 'À vous') throw new Error('turn label not re-rendered');
+    if (await page.evaluate(() => window.FFUI.getSession().state.drops.length) !== drops) throw new Error('the game lost its drops on a language change');
+    if (await page.textContent('#btn-hint') !== 'Indice (H)' && !/Indice/.test(await page.textContent('#btn-hint'))) throw new Error('tray not re-rendered');
+    await page.click('#btn-pause');
+    await page.click('#pause-settings');
+    await choice.scrollIntoViewIfNeeded();
+    await choice.selectOption('auto');
+    await page.waitForFunction(() => document.documentElement.lang === 'fr-CA');
+    if (mock.settings['ui.language']?.choice !== 'auto') throw new Error('auto not saved');
+    if (errors.length) throw new Error(errors.join(' | '));
+    console.log(`ok - [${label}] Language: Automatic follows the StarHermit preferred language; live switch mid-game; ui.language; report a problem`);
+  } catch (e) {
+    console.error(`FAIL - [${label} language] ${e.message}`);
+    failures++;
+  } finally {
+    mock.language = 'en';
+    await context.close();
+  }
+}
+
 try {
   await runPass('desktop', { width: 1280, height: 800 }, false);
   await runPass('mobile', { width: 390, height: 844 }, true);
   await runFallbackPass();
   if (apiLog.length) { console.error(`FAIL - standalone passes made platform calls: ${apiLog.join(', ')}`); failures++; }
   await runSignedInPass();
+  await runLanguagePass('desktop', { width: 1280, height: 800 }, false);
+  await runLanguagePass('mobile', { width: 390, height: 844 }, true);
 } finally {
   await browser.close();
   await new Promise((r) => server.close(r));
