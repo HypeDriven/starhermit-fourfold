@@ -22,7 +22,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { detectPreset, resolve, describe, SHADOW_MAP, PARTICLE_COUNT } from './gfx.js';
+import { detectLevel, presetForLevel, resolve, describe, SHADOW_MAP, PARTICLE_COUNT, MAX_PARTICLES } from './gfx.js';
 
 export const GFX_KEY = 'fourfold.gfx';
 
@@ -66,7 +66,12 @@ export function detectGpu() {
       if (lose) lose.loseContext();
     }
   } catch (e) { name = ''; }
-  gpuCache = { gpu: name || 'unknown GPU', preset: detectPreset(name, { mobile: isMobile() }) };
+  // StarHermit hardware level → Auto preset (SwiftShader = level 0 → Low; phones cap at Balanced).
+  const G = globalThis.StarHermitGpu;
+  let system = {};
+  try { system = G ? G.detectSystem() : {}; } catch (e) { system = {}; }
+  const level = detectLevel(name, { ...system, mobile: !!system.mobile || isMobile() });
+  gpuCache = { gpu: name || 'unknown GPU', level, preset: presetForLevel(level) };
   return gpuCache;
 }
 
@@ -267,12 +272,12 @@ function createCanvasView(canvas, opts) {
     // panel stays consistent and can say the 3D board is unavailable.
     setGraphics(next) {
       gfxSaved = next && typeof next === 'object' ? next : {};
-      canvas.dataset.gfxPreset = resolve(gfxSaved, detectGpu().preset).preset;
+      canvas.dataset.gfxPreset = resolve(gfxSaved, detectGpu().preset, detectGpu().level).preset;
       document.body.dataset.gfxPreset = canvas.dataset.gfxPreset;
     },
     graphicsInfo() {
-      const r = resolve(gfxSaved, detectGpu().preset);
-      return { kind: '2d', gpu: detectGpu().gpu, detected: detectGpu().preset, resolved: r,
+      const r = resolve(gfxSaved, detectGpu().preset, detectGpu().level);
+      return { kind: '2d', gpu: detectGpu().gpu, level: detectGpu().level, detected: detectGpu().preset, resolved: r,
         summary: '2D board', pixels: [canvas.width, canvas.height], fps: 0, adaptiveScale: 1, postFailed: true };
     },
     dispose() { api.setRunning(false); },
@@ -333,8 +338,8 @@ function canvasTexture(size, paint) {
 }
 
 // Soft value noise for the frosted plate (bump), tileable by wrapping.
-function noiseTexture() {
-  const t = canvasTexture(128, (g, n) => {
+function noiseTexture(size = 128) { // size from the preset budget (`noise`)
+  const t = canvasTexture(size, (g, n) => {
     const img = g.createImageData(n, n);
     const cell = 8, grid = [];
     let seed = 1234567;
@@ -404,10 +409,19 @@ function invertToneMap(color, exposure) {
   return new THREE.Color(x[0], x[1], x[2]);
 }
 
+// Run a post pass at a fraction of the frame (per-preset budget). EffectComposer sizes every pass to the
+// full frame in addPass/setSize, so the pass's own setSize is wrapped to apply the scale.
+function atScale(pass, k) {
+  if (!(k > 0 && k < 1)) return pass;
+  const setSize = pass.setSize.bind(pass);
+  pass.setSize = (w, h) => setSize(Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k)));
+  return pass;
+}
+
 function createThreeView(canvas, opts) {
   const gpuInfo = detectGpu();
   let saved = loadGraphics();
-  let q = resolve(saved, gpuInfo.preset);
+  let q = resolve(saved, gpuInfo.preset, gpuInfo.level);
   // Canvas MSAA is fixed when the context is created; later changes to
   // "msaa" are served by a multisampled post target instead.
   const nativeAA = q.antialias === 'msaa';
@@ -435,26 +449,41 @@ function createThreeView(canvas, opts) {
   scene.add(boardGroup);
 
   // Reused geometry/material (disposed explicitly on dispose()).
-  const discGeo = new THREE.CylinderGeometry(DISC_R, DISC_R, DISC_H, 40);
-  discGeo.rotateX(Math.PI / 2);
-  const discGeoD = new THREE.LatheGeometry(discProfile(), 56);
-  discGeoD.rotateX(Math.PI / 2);
-  const socketGeo = new THREE.TorusGeometry(DISC_R + 0.045, 0.05, 8, 36);
-  const holeGeo = new THREE.CircleGeometry(DISC_R + 0.045, 36);
+  // Round geometry follows the preset budget's LOD (segments ×, at least 8); rebuilt on change.
+  let discGeo, discGeoD, socketGeo, holeGeo, geoSegments = 0;
+  const seg = (n) => Math.max(8, Math.round(n * geoSegments));
+  function buildRoundGeos(k) {
+    for (const g of [discGeo, discGeoD, socketGeo, holeGeo]) if (g) g.dispose();
+    geoSegments = k;
+    discGeo = new THREE.CylinderGeometry(DISC_R, DISC_R, DISC_H, seg(40));
+    discGeo.rotateX(Math.PI / 2);
+    discGeoD = new THREE.LatheGeometry(discProfile(), seg(56));
+    discGeoD.rotateX(Math.PI / 2);
+    socketGeo = new THREE.TorusGeometry(DISC_R + 0.045, 0.05, 8, seg(36));
+    holeGeo = new THREE.CircleGeometry(DISC_R + 0.045, seg(36));
+  }
+  buildRoundGeos(q.budget.segments);
   const frameGeo = new THREE.BoxGeometry(1, 1, 0.3);
   const planeGeo = new THREE.PlaneGeometry(1, 1);
-  const owned = [discGeo, discGeoD, socketGeo, holeGeo, frameGeo, planeGeo];
+  const owned = [frameGeo, planeGeo];
 
   // Disc materials, created on demand per (detail, contrast, win, player).
   const discMatCache = new Map();
   function discMat(p, win) {
     const detailed = q.detail === 'detailed';
-    const k = [detailed ? 'd' : 'p', hc ? 'h' : 'n', win ? 'w' : '-', p].join('|');
+    const cls = q.budget.material; // lambert (Low) | standard | physical (clearcoat, High/Ultra)
+    const k = [detailed ? 'd' : 'p', cls, hc ? 'h' : 'n', win ? 'w' : '-', p].join('|');
     let m = discMatCache.get(k);
     if (m) return m;
     const color = hc ? HC_DISC[p] : opts.colors[p];
-    if (!detailed) {
+    if (cls === 'lambert') {
+      m = new THREE.MeshLambertMaterial({ color });
+      if (win && detailed) { m.emissive = new THREE.Color(color); m.emissiveIntensity = 0.55; }
+    } else if (!detailed) {
       m = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.1 });
+    } else if (cls !== 'physical') {
+      m = new THREE.MeshStandardMaterial({ color, roughness: 0.36, metalness: 0.0, envMapIntensity: 0.3 });
+      if (win) { m.emissive = new THREE.Color(color); m.emissiveIntensity = 0.55; }
     } else {
       m = new THREE.MeshPhysicalMaterial({
         color, roughness: 0.36, metalness: 0.0, clearcoat: 0.6, clearcoatRoughness: 0.18,
@@ -491,18 +520,27 @@ function createThreeView(canvas, opts) {
   owned.push(frameMat, socketMat, holeMat, hoverMat, ghostMat);
 
   // Detailed board: a perforated, bevelled front plate of frosted glass.
-  const noiseTex = noiseTexture();
-  const plateMat = new THREE.MeshPhysicalMaterial({
-    color: 0x5f7fc9, roughness: 0.4, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.1,
-    transparent: true, opacity: 0.8, bumpMap: noiseTex, bumpScale: 0.35, envMapIntensity: 0.35,
-  });
+  // Plate classes per budget: clearcoated physical (High/Ultra), standard (Balanced), Lambert (Low).
+  let noiseTex = noiseTexture(q.budget.noise);
   noiseTex.repeat.set(0.35, 0.35);
+  const plateMats = {
+    physical: new THREE.MeshPhysicalMaterial({
+      color: 0x5f7fc9, roughness: 0.4, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.1,
+      transparent: true, opacity: 0.8, bumpMap: noiseTex, bumpScale: 0.35, envMapIntensity: 0.35,
+    }),
+    standard: new THREE.MeshStandardMaterial({
+      color: 0x5f7fc9, roughness: 0.4, metalness: 0.0, transparent: true, opacity: 0.8,
+      bumpMap: noiseTex, bumpScale: 0.35, envMapIntensity: 0.35,
+    }),
+    lambert: new THREE.MeshLambertMaterial({ color: 0x5f7fc9, transparent: true, opacity: 0.8, bumpMap: noiseTex, bumpScale: 0.35 }),
+  };
+  let plateMat = plateMats[q.budget.material] || plateMats.standard;
   // Shadow catchers: plate rims into the recesses, and the board onto the wall.
   const recessShadowMat = new THREE.ShadowMaterial({ opacity: 0.5, depthWrite: false });
   const wallShadowMat = new THREE.ShadowMaterial({ opacity: 0.32, depthWrite: false });
   const glowTex = glowTexture();
   const glowMat = new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0.1, depthWrite: false });
-  owned.push(noiseTex, plateMat, recessShadowMat, wallShadowMat, glowTex, glowMat);
+  owned.push(...Object.values(plateMats), recessShadowMat, wallShadowMat, glowTex, glowMat);
 
   const frame = new THREE.Mesh(frameGeo, frameMat);
   frame.position.z = FRAME_Z;
@@ -534,7 +572,7 @@ function createThreeView(canvas, opts) {
   boardGroup.add(ghost);
 
   // Particles: landing puffs and win sparkles (additive, HDR so they bloom).
-  const PMAX = PARTICLE_COUNT.high;
+  const PMAX = MAX_PARTICLES; // pool for the largest budget
   const pPos = new Float32Array(PMAX * 3), pCol = new Float32Array(PMAX * 3);
   const pState = [];
   for (let i = 0; i < PMAX; i++) { pState.push({ life: 0, max: 1, vx: 0, vy: 0, r: 0, g: 0, b: 0 }); pPos[i * 3 + 2] = -50; }
@@ -589,7 +627,7 @@ function createThreeView(canvas, opts) {
       }
     const geo = new THREE.ExtrudeGeometry(shape, {
       depth: 0.08, bevelEnabled: true, bevelThickness: 0.035, bevelSize: 0.03,
-      bevelSegments: 3, curveSegments: 22,
+      bevelSegments: geoSegments < 1 ? 2 : 3, curveSegments: seg(22),
     });
     plate = new THREE.Mesh(geo, plateMat);
     plate.position.z = 0.15;
@@ -655,7 +693,7 @@ function createThreeView(canvas, opts) {
   function applyTheme() {
     const p = theme.palette;
     frameMat.color.setHex(p.frame);
-    plateMat.color.setHex(p.frame).multiplyScalar(0.42);
+    for (const m of Object.values(plateMats)) m.color.setHex(p.frame).multiplyScalar(0.42);
     bgRaw.setHex(p.bg);
     bgPost.copy(invertToneMap(bgRaw, renderer.toneMappingExposure));
     if (gradePass) gradePass.uniforms.uKeep.value.copy(bgRaw).convertLinearToSRGB();
@@ -667,6 +705,42 @@ function createThreeView(canvas, opts) {
     applyBanned();
   }
   applyTheme();
+
+  // Preset asset variants: round-geometry LOD, plate noise size and the material class of discs, frame,
+  // sockets, markers and plate (Lambert twins on Low).
+  const lambertTwins = new Map();
+  let builtNoise = q.budget.noise;
+  function applyBudget() {
+    const b = q.budget;
+    const nextPlate = plateMats[b.material] || plateMats.standard;
+    if (nextPlate !== plateMat) { plateMat = nextPlate; if (plate) plate.material = plateMat; }
+    if (geoSegments !== b.segments) {
+      buildRoundGeos(b.segments);
+      if (sockets) sockets.geometry = socketGeo;
+      if (holes) holes.geometry = holeGeo;
+      if (plate) buildPlate();
+    }
+    if (builtNoise !== b.noise) {
+      builtNoise = b.noise;
+      const old = noiseTex;
+      noiseTex = noiseTexture(b.noise);
+      noiseTex.repeat.set(0.35, 0.35);
+      for (const m of Object.values(plateMats)) { m.bumpMap = noiseTex; m.needsUpdate = true; }
+      old.dispose();
+    }
+    const lambert = b.material === 'lambert';
+    const twin = (m) => {
+      if (!lambertTwins.has(m)) lambertTwins.set(m, new THREE.MeshLambertMaterial({ color: m.color, transparent: m.transparent, opacity: m.opacity }));
+      const t = lambertTwins.get(m);
+      t.color.copy(m.color); t.opacity = m.opacity;
+      return t;
+    };
+    frame.material = lambert ? twin(frameMat) : frameMat;
+    if (sockets) sockets.material = lambert ? twin(socketMat) : socketMat;
+    litMark = lambert ? twin(markMat) : markMat;
+    for (const d of discs) if (d) d.children[0].material = litMark; // disc materials follow in syncDiscs()
+  }
+  let litMark = markMat;
 
   // Plain = the original slab with socket rings; detailed = bevelled plate,
   // clear-coated chip discs, recess shadows and a lit wall behind the board.
@@ -720,7 +794,7 @@ function createThreeView(canvas, opts) {
         m.castShadow = true;
         m.receiveShadow = true;
         m.position.set(L.x(Math.floor(i / L.rows)), L.y(i % L.rows), 0);
-        const mark = new THREE.Mesh(markGeo[v] || markGeo[1], markMat);
+        const mark = new THREE.Mesh(markGeo[v] || markGeo[1], litMark);
         mark.position.z = DISC_H / 2 + 0.03;
         mark.castShadow = true;
         m.add(mark);
@@ -757,7 +831,7 @@ function createThreeView(canvas, opts) {
   function particleBudget() { return reduced ? 0 : PARTICLE_COUNT[q.particles] || 0; }
 
   function landingPuff(k) {
-    const n = particleBudget() >= PARTICLE_COUNT.high ? 12 : particleBudget() ? 6 : 0;
+    const n = Math.round((particleBudget() >= PARTICLE_COUNT.high ? 12 : particleBudget() ? 6 : 0) * q.budget.sparks);
     if (!n || !discs[k]) return;
     const x = discs[k].position.x, y = discs[k].position.y - DISC_R * 0.8;
     const col = hc ? HC_DISC[discs[k].userData.player] : opts.colors[discs[k].userData.player];
@@ -774,7 +848,7 @@ function createThreeView(canvas, opts) {
     if (!budget) return;
     // Win sparkles rise from the winning line while the board is decided.
     if (snap && snap.terminal && snap.terminal.line) {
-      sparkleAcc += dt * (budget >= PARTICLE_COUNT.high ? 36 : 14);
+      sparkleAcc += dt * (budget >= PARTICLE_COUNT.high ? 36 : 14) * q.budget.sparks;
       const line = snap.terminal.line;
       while (sparkleAcc >= 1) {
         sparkleAcc -= 1;
@@ -841,7 +915,7 @@ function createThreeView(canvas, opts) {
   // ---------------------------------------------------------------- graphics
 
   function applyGraphics() {
-    q = resolve(saved, gpuInfo.preset);
+    q = resolve(saved, gpuInfo.preset, gpuInfo.level);
     const size = SHADOW_MAP[q.shadows];
     const shadowsWere = renderer.shadowMap.enabled;
     renderer.shadowMap.enabled = size > 0;
@@ -859,6 +933,7 @@ function createThreeView(canvas, opts) {
     }
     scene.environment = q.reflections === 'on' ? envTex : null;
     fill.intensity = q.reflections === 'on' ? 0.75 : 1.1;
+    applyBudget();
     applyDetail();
     if (snap) syncDiscs();
     if (shadowsWere !== renderer.shadowMap.enabled) {
@@ -902,7 +977,7 @@ function createThreeView(canvas, opts) {
       c.setSize(w, h);
       c.addPass(new RenderPass(scene, camera));
       if (q.ao !== 'off') {
-        const ao = new GTAOPass(scene, camera, pw, ph);
+        const ao = atScale(new GTAOPass(scene, camera, pw, ph), q.budget.aoRes);
         ao.output = GTAOPass.OUTPUT.Default;
         ao.blendIntensity = 0.7;
         const hi = q.ao === 'high';
@@ -912,7 +987,7 @@ function createThreeView(canvas, opts) {
       }
       // Threshold is in linear scene units: lit disc faces peak near 2, so only
       // the emissive win line, sparkles and specular glints bloom.
-      if (q.bloom === 'on') c.addPass(new UnrealBloomPass(new THREE.Vector2(w, h), 0.45, 0.35, 2.1));
+      if (q.bloom === 'on') c.addPass(atScale(new UnrealBloomPass(new THREE.Vector2(w, h), 0.45, 0.35, 2.1), q.budget.bloomRes));
       c.addPass(new OutputPass());
       if (q.grade === 'on') {
         gradePass = new ShaderPass(GradeShader);
@@ -1060,7 +1135,7 @@ function createThreeView(canvas, opts) {
     graphicsInfo() {
       const px = [Math.round(lastW * pixelRatio), Math.round(lastH * pixelRatio)];
       return {
-        kind: '3d', gpu: gpuInfo.gpu, detected: gpuInfo.preset, resolved: q,
+        kind: '3d', gpu: gpuInfo.gpu, level: gpuInfo.level, detected: gpuInfo.preset, resolved: q,
         summary: describe(q, px[0] ? px : null), pixels: px, fps: Math.round(fps),
         adaptiveScale: Math.round(adaptiveScale * 100) / 100, postFailed, nativeAA,
       };
@@ -1076,6 +1151,7 @@ function createThreeView(canvas, opts) {
       disposePost();
       if (envTex) envTex.dispose();
       for (const o of owned) o.dispose();
+      for (const o of [discGeo, discGeoD, socketGeo, holeGeo, noiseTex, ...lambertTwins.values()]) o.dispose();
       renderer.dispose();
     },
   };

@@ -417,6 +417,9 @@ async function runPass(label, viewport, hasTouch) {
       if (!fits) throw new Error('Graphics panel does not fit the viewport width');
       const auto = await page.locator('#gfx-preset option[value="auto"]').textContent();
       if (!/Auto \(detected: \w+\)/.test(auto)) throw new Error('auto option label: ' + auto);
+      // The summary names the StarHermit hardware level (software GPU = level 0).
+      const sum = await page.locator('#gfx-summary').textContent();
+      if (!/Level 0/.test(sum)) throw new Error('summary lacks the hardware level: ' + sum);
       await page.locator('#gfx-preset').selectOption('low');
       if (await gfxPreset() !== 'low') throw new Error('Low preset not applied');
       await page.locator('#gfx-preset').selectOption('high');

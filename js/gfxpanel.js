@@ -11,7 +11,7 @@ import { loadGraphics, saveGraphics } from './view3d.js';
 
 const STRINGS = {
   'en-US': {
-    legend: 'Graphics', quality: 'Quality', auto: 'Auto (detected: {t})', scale: 'Render scale',
+    level: 'Level {t}', legend: 'Graphics', quality: 'Quality', auto: 'Auto (detected: {t})', scale: 'Render scale',
     fromPreset: 'From preset ({t})', adaptive: 'Adaptive resolution (lower it when frames are slow)',
     fps: 'Show frame rate', postFailed: 'Post-processing is unavailable on this device; rendering without effects.',
     no3d: '3D board unavailable; the 2D board ignores graphics settings.',
@@ -21,7 +21,7 @@ const STRINGS = {
     noShadows: 'no shadows', noAA: 'no anti-aliasing',
   },
   'en-GB': {
-    legend: 'Graphics', quality: 'Quality', auto: 'Auto (detected: {t})', scale: 'Render scale',
+    level: 'Level {t}', legend: 'Graphics', quality: 'Quality', auto: 'Auto (detected: {t})', scale: 'Render scale',
     fromPreset: 'From preset ({t})', adaptive: 'Adaptive resolution (lower it when frames are slow)',
     fps: 'Show frame rate', postFailed: 'Post-processing is unavailable on this device; rendering without effects.',
     no3d: '3D board unavailable; the 2D board ignores graphics settings.',
@@ -31,7 +31,7 @@ const STRINGS = {
     noShadows: 'no shadows', noAA: 'no anti-aliasing',
   },
   'es-419': {
-    legend: 'Gráficos', quality: 'Calidad', auto: 'Automática (detectada: {t})', scale: 'Escala de renderizado',
+    level: 'Nivel {t}', legend: 'Gráficos', quality: 'Calidad', auto: 'Automática (detectada: {t})', scale: 'Escala de renderizado',
     fromPreset: 'Según el ajuste ({t})', adaptive: 'Resolución adaptativa (la baja si los fotogramas van lentos)',
     fps: 'Mostrar fotogramas por segundo', postFailed: 'El posprocesado no está disponible en este dispositivo; se renderiza sin efectos.',
     no3d: 'Tablero 3D no disponible; el tablero 2D ignora los ajustes de gráficos.',
@@ -41,7 +41,7 @@ const STRINGS = {
     noShadows: 'sin sombras', noAA: 'sin antialiasing',
   },
   'es-ES': {
-    legend: 'Gráficos', quality: 'Calidad', auto: 'Automática (detectada: {t})', scale: 'Escala de renderizado',
+    level: 'Nivel {t}', legend: 'Gráficos', quality: 'Calidad', auto: 'Automática (detectada: {t})', scale: 'Escala de renderizado',
     fromPreset: 'Según el ajuste ({t})', adaptive: 'Resolución adaptativa (la reduce si los fotogramas van lentos)',
     fps: 'Mostrar fotogramas por segundo', postFailed: 'El posprocesado no está disponible en este dispositivo; se renderiza sin efectos.',
     no3d: 'Tablero 3D no disponible; el tablero 2D ignora los ajustes de gráficos.',
@@ -51,7 +51,7 @@ const STRINGS = {
     noShadows: 'sin sombras', noAA: 'sin antialiasing',
   },
   'de-DE': {
-    legend: 'Grafik', quality: 'Qualität', auto: 'Automatisch (erkannt: {t})', scale: 'Renderskalierung',
+    level: 'Stufe {t}', legend: 'Grafik', quality: 'Qualität', auto: 'Automatisch (erkannt: {t})', scale: 'Renderskalierung',
     fromPreset: 'Laut Voreinstellung ({t})', adaptive: 'Adaptive Auflösung (senkt sie bei langsamen Bildern)',
     fps: 'Bildrate anzeigen', postFailed: 'Nachbearbeitung ist auf diesem Gerät nicht verfügbar; es wird ohne Effekte gerendert.',
     no3d: '3D-Brett nicht verfügbar; das 2D-Brett ignoriert Grafikeinstellungen.',
@@ -61,7 +61,7 @@ const STRINGS = {
     noShadows: 'keine Schatten', noAA: 'keine Kantenglättung',
   },
   'fr-FR': {
-    legend: 'Graphismes', quality: 'Qualité', auto: 'Automatique (détectée : {t})', scale: 'Échelle de rendu',
+    level: 'Niveau {t}', legend: 'Graphismes', quality: 'Qualité', auto: 'Automatique (détectée : {t})', scale: 'Échelle de rendu',
     fromPreset: 'Selon le préréglage ({t})', adaptive: 'Résolution adaptative (baisse si les images ralentissent)',
     fps: 'Afficher les images par seconde', postFailed: 'Le post-traitement est indisponible sur cet appareil ; rendu sans effets.',
     no3d: 'Plateau 3D indisponible ; le plateau 2D ignore les réglages graphiques.',
@@ -71,7 +71,7 @@ const STRINGS = {
     noShadows: 'sans ombres', noAA: 'sans anticrénelage',
   },
   'fr-CA': {
-    legend: 'Graphiques', quality: 'Qualité', auto: 'Automatique (détectée : {t})', scale: 'Échelle de rendu',
+    level: 'Niveau {t}', legend: 'Graphiques', quality: 'Qualité', auto: 'Automatique (détectée : {t})', scale: 'Échelle de rendu',
     fromPreset: 'Selon le préréglage ({t})', adaptive: 'Résolution adaptative (baisse si les images ralentissent)',
     fps: 'Afficher la fréquence d’images', postFailed: 'Le post-traitement n’est pas offert sur cet appareil; rendu sans effets.',
     no3d: 'Plateau 3D non disponible; le plateau 2D ignore les réglages graphiques.',
@@ -81,7 +81,7 @@ const STRINGS = {
     noShadows: 'sans ombres', noAA: 'sans anticrénelage',
   },
   'pt-BR': {
-    legend: 'Gráficos', quality: 'Qualidade', auto: 'Automática (detectada: {t})', scale: 'Escala de renderização',
+    level: 'Nível {t}', legend: 'Gráficos', quality: 'Qualidade', auto: 'Automática (detectada: {t})', scale: 'Escala de renderização',
     fromPreset: 'Conforme a predefinição ({t})', adaptive: 'Resolução adaptativa (reduz quando os quadros ficam lentos)',
     fps: 'Mostrar taxa de quadros', postFailed: 'O pós-processamento não está disponível neste dispositivo; renderizando sem efeitos.',
     no3d: 'Tabuleiro 3D indisponível; o tabuleiro 2D ignora as configurações gráficas.',
@@ -91,7 +91,7 @@ const STRINGS = {
     noShadows: 'sem sombras', noAA: 'sem antisserrilhamento',
   },
   'it-IT': {
-    legend: 'Grafica', quality: 'Qualità', auto: 'Automatica (rilevata: {t})', scale: 'Scala di rendering',
+    level: 'Livello {t}', legend: 'Grafica', quality: 'Qualità', auto: 'Automatica (rilevata: {t})', scale: 'Scala di rendering',
     fromPreset: 'Dal preset ({t})', adaptive: 'Risoluzione adattiva (la abbassa se i fotogrammi rallentano)',
     fps: 'Mostra frequenza fotogrammi', postFailed: 'La post-elaborazione non è disponibile su questo dispositivo; rendering senza effetti.',
     no3d: 'Tabellone 3D non disponibile; il tabellone 2D ignora le impostazioni grafiche.',
@@ -213,7 +213,7 @@ export function initGraphicsPanel(getView) {
 
   function summarize(i) {
     const r = i.resolved;
-    const parts = [i.gpu];
+    const parts = [i.gpu, S.level.replace('{t}', i.level ?? 0)];
     parts.push(r.shadows === 'off' ? S.noShadows : `${S.cats.shadows} ${tier(r.shadows).toLowerCase()}`);
     for (const cat of ['ao', 'bloom', 'reflections', 'particles']) if (r[cat] !== 'off') parts.push(S.cats[cat]);
     parts.push(r.antialias === 'off' ? S.noAA : tier(r.antialias));
