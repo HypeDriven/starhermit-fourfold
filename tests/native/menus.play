@@ -1,0 +1,76 @@
+# The menus: Journey (locked stages), Challenges (Pentafold's nine columns,
+# a drop by key 9, the pause sheet's Leave to menu), Learn (the Make four
+# lesson rejecting a column it does not teach, then completing on column 7),
+# the Daily board, Settings (the erase confirmation cancelled), Help.
+until 600 Make four in a row
+frames 30
+click =Journey
+until 120 Stars come from winning
+frames 20
+save journey
+expect Locked
+click =Back
+until 120 Make four in a row
+frames 10
+click =Challenges
+until 120 Each challenge states its rules
+frames 10
+save challenges
+click =Pentafold
+until 120 FIVE in a row
+frames 60
+key Digit9 1
+frames 5
+until 600 =Your turn
+frames 60
+save pentafold
+key Escape 1
+until 60 Leave to menu
+frames 10
+click =Leave to menu
+until 120 Resume Pentafold
+frames 10
+click =Learn
+until 120 Short lessons
+frames 10
+click =Make four
+until 120 Column 7, 0 of 6 filled
+frames 30
+key Digit1 1
+until 60 This lesson wants column 7.
+frames 10
+key Digit7 1
+until 300 =You made four
+frames 60
+save lesson
+click =Back to menu
+until 120 Make four in a row
+frames 10
+click =Daily board
+until 120 =Your turn
+frames 30
+save daily
+key Escape 1
+until 60 Leave to menu
+frames 10
+click =Leave to menu
+until 120 Make four in a row
+frames 10
+click =Settings
+until 120 Open Options
+frames 10
+click Erase progress on this device
+until 60 Erase all Fourfold progress
+frames 10
+save settings
+click =Cancel
+frames 10
+click =Back
+until 120 Make four in a row
+frames 10
+click =Help and rules
+until 120 How to play
+frames 10
+save help
+click =Back
+until 120 Make four in a row

@@ -1,0 +1,37 @@
+# Practice against Steady AI: the title, Play, the opponent list, three drops
+# (a number key, a column click, arrows + Enter), Hint and Undo from the tray,
+# the pause sheet and Resume, then Leave to menu.
+until 600 Make four in a row
+frames 150
+save title
+click =Play
+until 120 Pick an opponent
+frames 10
+save practice
+click =Steady AI
+until 120 Your turn
+frames 30
+key Digit4 1
+until 300 =Your turn
+frames 60
+click Column 4,
+until 300 =Your turn
+frames 60
+save board
+click Hint (H)
+until 300 Hint: column
+frames 10
+click Undo (U)
+until 120 Undid
+frames 10
+key KeyP 1
+until 60 Restart this board
+frames 10
+save pause
+click =Resume
+frames 10
+key Escape 1
+until 60 Leave to menu
+frames 10
+click =Leave to menu
+until 120 Make four in a row

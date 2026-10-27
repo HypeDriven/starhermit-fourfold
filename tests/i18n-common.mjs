@@ -18,7 +18,7 @@ export function loadTables(root, files, globalName) {
   sandbox.window = sandbox.self;
   vm.createContext(sandbox);
   for (const f of files) vm.runInContext(readFileSync(new URL(f, root), 'utf8'), sandbox);
-  return sandbox.self[globalName];
+  return sandbox.self[globalName] || sandbox[globalName];
 }
 
 /** English keys passed to T('…') / N('…'), including T(c ? '…' : '…'). */
