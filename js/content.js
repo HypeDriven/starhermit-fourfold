@@ -16,7 +16,7 @@
   var api = factory(RNG, Rules);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.FFContent = api;
-})(typeof self !== 'undefined' ? self : this, function (RNG, Rules) {
+})(typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : this, function (RNG, Rules) {
   'use strict';
 
   var CONTENT_VERSION = 1;

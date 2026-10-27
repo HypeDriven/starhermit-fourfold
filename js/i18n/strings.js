@@ -22,8 +22,6 @@
     ['Taller grids, five in a row, three players', 'Cuadrículas más altas, cinco en línea, tres jugadores', 'Höhere Raster, fünf in einer Reihe, drei Spieler', 'Grilles plus hautes, cinq alignés, trois joueurs', 'Grades mais altas, cinco em linha, três jogadores', 'Griglie più alte, cinque in fila, tre giocatori'],
     ['Learn', 'Aprender', 'Lernen', 'Apprendre', 'Aprender', 'Impara'],
     ['Six short lessons', 'Seis lecciones cortas', 'Sechs kurze Lektionen', 'Six courtes leçons', 'Seis lições curtas', 'Sei brevi lezioni'],
-    ['Sign in with StarHermit', 'Iniciar sesión con StarHermit', 'Mit StarHermit anmelden', 'Se connecter avec StarHermit', 'Entrar com StarHermit', 'Accedi con StarHermit'],
-    ['Invite a friend', 'Invitar a un amigo', 'Freund einladen', 'Inviter un ami', 'Convidar um amigo', 'Invita un amico'],
     ['{games} games · {wins} wins · {stars} stars', '{games} partidas · {wins} victorias · {stars} estrellas', '{games} Partien · {wins} Siege · {stars} Sterne', '{games} parties · {wins} victoires · {stars} étoiles', '{games} partidas · {wins} vitórias · {stars} estrelas', '{games} partite · {wins} vittorie · {stars} stelle'],
     ['New player — start with Learn or Play.', 'Jugador nuevo: empieza por Aprender o Jugar.', 'Neu hier – fang mit Lernen oder Spielen an.', 'Nouveau joueur — commencez par Apprendre ou Jouer.', 'Jogador novo — comece por Aprender ou Jogar.', 'Nuovo giocatore: inizia da Impara o Gioca.'],
     ['Resume {name}', 'Reanudar {name}', '{name} fortsetzen', 'Reprendre {name}', 'Retomar {name}', 'Riprendi {name}'],
@@ -41,11 +39,9 @@
     ['You already played today’s board. Replaying for practice.', 'Ya jugaste el tablero de hoy. Se repite como práctica.', 'Du hast das heutige Brett schon gespielt. Wiederholung als Training.', 'Vous avez déjà joué le plateau du jour. Partie rejouée pour l’entraînement.', 'Você já jogou o tabuleiro de hoje. Repetindo como treino.', 'Hai già giocato la tavola di oggi. La rigiochi per allenamento.'],
 
     // ---- play screen
-    ['Board', 'Tablero', 'Brett', 'Plateau', 'Tabuleiro', 'Tavola'],
     ['Your turn', 'Tu turno', 'Du bist dran', 'À vous', 'Sua vez', 'Tocca a te'],
     ['{name}’s turn', 'Turno de {name}', '{name} ist dran', 'Au tour de {name}', 'Vez de {name}', 'Turno di {name}'],
     ['{name} is thinking…', '{name} está pensando…', '{name} denkt nach …', '{name} réfléchit…', '{name} está pensando…', '{name} sta pensando…'],
-    ['Fourfold board', 'Tablero de Fourfold', 'Fourfold-Brett', 'Plateau de Fourfold', 'Tabuleiro de Fourfold', 'Tavola di Fourfold'],
     ['Columns — choose one to drop a disc', 'Columnas: elige una para soltar una ficha', 'Spalten – wähle eine, um eine Scheibe fallen zu lassen', 'Colonnes — choisissez-en une pour lâcher un jeton', 'Colunas — escolha uma para soltar uma ficha', 'Colonne: scegline una per lasciare cadere un disco'],
     ['Undo', 'Deshacer', 'Rückgängig', 'Annuler', 'Desfazer', 'Annulla'],
     ['Hint', 'Pista', 'Tipp', 'Indice', 'Dica', 'Suggerimento'],
@@ -95,7 +91,6 @@
     ['Speed bonus', 'Bono de velocidad', 'Tempobonus', 'Bonus de vitesse', 'Bônus de velocidade', 'Bonus velocità'],
     ['Your drops', 'Tus fichas', 'Deine Scheiben', 'Vos jetons', 'Suas fichas', 'I tuoi dischi'],
     ['Score', 'Puntuación', 'Punkte', 'Score', 'Pontuação', 'Punteggio'],
-    ['Next', 'Siguiente', 'Weiter', 'Suivant', 'Próxima', 'Avanti'],
     ['Next: {name}', 'Siguiente: {name}', 'Weiter: {name}', 'Suivant : {name}', 'Próxima: {name}', 'Prossima: {name}'],
     ['{headline}. Score {n}.', '{headline}. Puntuación {n}.', '{headline}. Punkte {n}.', '{headline}. Score {n}.', '{headline}. Pontuação {n}.', '{headline}. Punteggio {n}.'],
     ['Lesson complete', 'Lección completa', 'Lektion geschafft', 'Leçon terminée', 'Lição concluída', 'Lezione completata'],
@@ -110,17 +105,9 @@
     ['Leave to menu', 'Salir al menú', 'Zum Menü', 'Quitter vers le menu', 'Sair para o menu', 'Esci al menu'],
 
     // ---- settings
-    ['Audio', 'Audio', 'Audio', 'Audio', 'Áudio', 'Audio'],
-    ['Effects volume', 'Volumen de efectos', 'Effektlautstärke', 'Volume des effets', 'Volume dos efeitos', 'Volume effetti'],
-    ['Mute all sound', 'Silenciar todo', 'Alles stummschalten', 'Couper tout le son', 'Silenciar tudo', 'Silenzia tutto'],
     ['Accessibility', 'Accesibilidad', 'Barrierefreiheit', 'Accessibilité', 'Acessibilidade', 'Accessibilità'],
-    ['Reduced motion (no falling animation)', 'Movimiento reducido (sin animación de caída)', 'Weniger Bewegung (keine Fallanimation)', 'Animations réduites (pas de chute animée)', 'Movimento reduzido (sem animação de queda)', 'Movimento ridotto (nessuna animazione di caduta)'],
-    ['High-contrast palette', 'Paleta de alto contraste', 'Kontrastreiche Farben', 'Palette à contraste élevé', 'Paleta de alto contraste', 'Tavolozza ad alto contrasto'],
-    ['Larger text', 'Texto más grande', 'Größerer Text', 'Texte agrandi', 'Texto maior', 'Testo più grande'],
     ['Disc colours are always reinforced by a shape: ● you, ◆ rival, ▲ third, ■ fourth.', 'Los colores de las fichas siempre van con una forma: ● tú, ◆ rival, ▲ tercero, ■ cuarto.', 'Scheibenfarben werden immer durch eine Form ergänzt: ● du, ◆ Gegner, ▲ Dritter, ■ Vierter.', 'Les couleurs des jetons sont toujours doublées d’une forme : ● vous, ◆ rival, ▲ troisième, ■ quatrième.', 'As cores das fichas sempre vêm com uma forma: ● você, ◆ rival, ▲ terceiro, ■ quarto.', 'I colori dei dischi sono sempre accompagnati da una forma: ● tu, ◆ rivale, ▲ terzo, ■ quarto.'],
-    ['Graphics', 'Gráficos', 'Grafik', 'Graphismes', 'Gráficos', 'Grafica'],
     ['Data', 'Datos', 'Daten', 'Données', 'Dados', 'Dati'],
-    ['Progress is stored only in this browser.', 'El progreso se guarda solo en este navegador.', 'Der Fortschritt wird nur in diesem Browser gespeichert.', 'La progression est enregistrée dans ce navigateur uniquement.', 'O progresso fica salvo só neste navegador.', 'I progressi restano solo in questo browser.'],
     ['Erase progress on this device', 'Borrar el progreso en este dispositivo', 'Fortschritt auf diesem Gerät löschen', 'Effacer la progression sur cet appareil', 'Apagar o progresso neste dispositivo', 'Cancella i progressi su questo dispositivo'],
     ['Erase progress on this device and in the cloud', 'Borrar el progreso en este dispositivo y en la nube', 'Fortschritt auf diesem Gerät und in der Cloud löschen', 'Effacer la progression sur cet appareil et dans le nuage', 'Apagar o progresso neste dispositivo e na nuvem', 'Cancella i progressi su questo dispositivo e nel cloud'],
     ['Erase all Fourfold progress on this device?', '¿Borrar todo el progreso de Fourfold en este dispositivo?', 'Gesamten Fourfold-Fortschritt auf diesem Gerät löschen?', 'Effacer toute la progression de Fourfold sur cet appareil ?', 'Apagar todo o progresso de Fourfold neste dispositivo?', 'Cancellare tutti i progressi di Fourfold su questo dispositivo?'],
@@ -129,8 +116,18 @@
     ['Syncing…', 'Sincronizando…', 'Wird synchronisiert …', 'Synchronisation…', 'Sincronizando…', 'Sincronizzazione…'],
     ['Saving…', 'Guardando…', 'Wird gespeichert …', 'Enregistrement…', 'Salvando…', 'Salvataggio…'],
     ['Cloud saved', 'Guardado en la nube', 'In der Cloud gespeichert', 'Enregistré dans le nuage', 'Salvo na nuvem', 'Salvato nel cloud'],
-    ['Cloud unreachable — progress stays on this device', 'Nube inaccesible: el progreso queda en este dispositivo', 'Cloud nicht erreichbar – der Fortschritt bleibt auf diesem Gerät', 'Nuage injoignable — la progression reste sur cet appareil', 'Nuvem inacessível — o progresso fica neste dispositivo', 'Cloud irraggiungibile: i progressi restano su questo dispositivo'],
     ['Cloud sync failed — will retry', 'Falló la sincronización: se reintentará', 'Cloud-Sync fehlgeschlagen – neuer Versuch folgt', 'Échec de la synchronisation — nouvel essai à venir', 'Falha na sincronização — tentaremos de novo', 'Sincronizzazione non riuscita: riproveremo'],
+
+    // ---- engine client
+    ['Modes', 'Modos', 'Modi', 'Modes', 'Modos', 'Modalità'],
+    ['Options', 'Opciones', 'Optionen', 'Options', 'Opções', 'Opzioni'],
+    ['Open Options', 'Abrir opciones', 'Optionen öffnen', 'Ouvrir les options', 'Abrir opções', 'Apri opzioni'],
+    ['Sound, graphics, language, controls, reduced motion, high contrast and text size are in the StarHermit Options menu (F1).', 'El sonido, los gráficos, el idioma, los controles, el movimiento reducido, el alto contraste y el tamaño del texto están en el menú Opciones de StarHermit (F1).', 'Ton, Grafik, Sprache, Steuerung, reduzierte Bewegung, hoher Kontrast und Textgröße findest du im StarHermit-Menü Optionen (F1).', 'Le son, les graphismes, la langue, les commandes, le mouvement réduit, le contraste élevé et la taille du texte se trouvent dans le menu Options de StarHermit (F1).', 'Som, gráficos, idioma, controles, movimento reduzido, alto contraste e tamanho do texto ficam no menu Opções do StarHermit (F1).', 'Audio, grafica, lingua, comandi, movimento ridotto, contrasto elevato e dimensione del testo sono nel menu Opzioni di StarHermit (F1).'],
+    ['Progress is stored only on this device.', 'El progreso se guarda solo en este dispositivo.', 'Der Fortschritt wird nur auf diesem Gerät gespeichert.', 'La progression est enregistrée uniquement sur cet appareil.', 'O progresso fica salvo só neste dispositivo.', 'I progressi sono salvati solo su questo dispositivo.'],
+    ['Erase', 'Borrar', 'Löschen', 'Effacer', 'Apagar', 'Cancella'],
+    ['Cancel', 'Cancelar', 'Abbrechen', 'Annuler', 'Cancelar', 'Annulla'],
+    ['That move is not allowed.', 'Esa jugada no está permitida.', 'Dieser Zug ist nicht erlaubt.', 'Ce coup n’est pas permis.', 'Essa jogada não é permitida.', 'Questa mossa non è consentita.'],
+    ['Gamepad: the D-pad moves between columns, A drops, X hints, Y undoes, Start pauses.', 'Mando: la cruceta cambia de columna, A suelta, X da una pista, Y deshace, Start pausa.', 'Gamepad: Das Steuerkreuz wechselt die Spalte, A lässt fallen, X gibt einen Tipp, Y macht rückgängig, Start pausiert.', 'Manette : la croix change de colonne, A lâche, X donne un indice, Y annule, Start met en pause.', 'Controle: o direcional troca de coluna, A solta, X dá uma dica, Y desfaz, Start pausa.', 'Gamepad: la croce direzionale cambia colonna, A lascia cadere, X dà un suggerimento, Y annulla, Start mette in pausa.'],
 
     // ---- help
     ['How to play', 'Cómo se juega', 'So wird gespielt', 'Comment jouer', 'Como jogar', 'Come si gioca'],
@@ -157,4 +154,4 @@
     var t = S[l] = S[l] || {};
     ROWS.forEach(function (r) { t[r[0]] = r[i + 1]; });
   });
-})(typeof self !== 'undefined' ? self : this);
+})(typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : this);

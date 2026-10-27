@@ -1,0 +1,116 @@
+/* Fourfold — the browser build's css/app.css rewritten class-based for the
+   engine's UI (`npm run css` converts it into assets/ui-style.json). Element
+   selectors, ids, attribute selectors and @media do not convert: every
+   widget names its classes, and the old breakpoints (phones, short
+   landscape) are layouts native/screens.ts picks. High contrast, larger text
+   and reduced motion are the runtime's options now (Options › Accessibility),
+   so body.high-contrast / body.large-text are gone. */
+
+:root {
+  --bg: #0e1424;
+  --panel: #161e33;
+  --panel-2: #1e2842;
+  --line: #2c3a5e;
+  --ink: #e8ecf5;
+  --ink-dim: #a4b0c8;
+  --accent: #7fb0ff;
+  --accent-ink: #06101f;
+  --p1: #ffb54d;
+  --p2: #4dc9ff;
+  --good: #7fe08a;
+  --bad: #ff8a8a;
+  --header: #0e1424e6;
+  --veil: #060a14d1;
+  --well: #0a0f1e;
+}
+
+* { box-sizing: border-box; }
+
+/* ------------------------------------------------------------- text */
+.text { color: var(--ink); font-size: 16px; }
+.dim { color: var(--ink-dim); font-size: 16px; }
+.small { color: var(--ink-dim); font-size: 14px; }
+.strong { color: var(--ink); font-size: 16px; font-weight: 620; }
+.wordmark { color: var(--ink); font-size: 22px; font-weight: 650; letter-spacing: 3px; }
+.mark { color: var(--accent); font-size: 22px; font-weight: 650; }
+.acct { color: var(--ink-dim); font-size: 13.6px; }
+.h2 { color: var(--ink); font-size: 25px; font-weight: 700; }
+.sheet-h { color: var(--ink); font-size: 21px; font-weight: 700; }
+.lede { color: var(--ink-dim); font-size: 16px; }
+.status { color: var(--ink-dim); font-size: 14.7px; }
+.status-error { color: var(--bad); font-size: 14.7px; }
+.headline { color: var(--ink); font-size: 28px; font-weight: 700; }
+.headline-win { color: var(--good); font-size: 28px; font-weight: 700; }
+.headline-loss { color: var(--bad); font-size: 28px; font-weight: 700; }
+.stars { color: var(--p1); font-size: 18px; letter-spacing: 3px; }
+.legend { color: var(--ink-dim); font-size: 14.4px; }
+.turn { color: var(--ink); font-size: 16px; font-weight: 620; }
+.meta { color: var(--ink-dim); font-size: 14.4px; }
+.meta-b { color: var(--ink); font-size: 14.4px; font-weight: 700; }
+.objective { color: var(--ink-dim); font-size: 14.4px; }
+.bd-key { color: var(--ink-dim); font-size: 16px; }
+.bd-val { color: var(--ink); font-size: 16px; text-align: right; }
+.bd-total-key { color: var(--ink-dim); font-size: 16px; font-weight: 700; }
+.bd-total-val { color: var(--ink); font-size: 16px; font-weight: 700; text-align: right; }
+.lb-line { color: var(--ink-dim); font-size: 16px; text-align: center; }
+.card-title { color: var(--ink); font-size: 16px; font-weight: 620; }
+.card-sub { color: var(--ink-dim); font-size: 14px; }
+.card-stars { color: var(--p1); font-size: 16px; letter-spacing: 2px; }
+
+/* ------------------------------------------------------------- buttons */
+.btn {
+  font-size: 16px; color: var(--ink); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px 16px; min-height: 44px; text-align: left;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: .45; }
+.btn-center {
+  font-size: 16px; color: var(--ink); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px 16px; min-height: 44px; text-align: center;
+}
+.btn-center:hover { border-color: var(--accent); }
+.btn-center:disabled { opacity: .45; }
+.btn-primary {
+  font-size: 16px; color: var(--accent-ink); background: var(--accent);
+  border: 1px solid var(--accent); border-radius: 12px; font-weight: 650;
+  padding: 10px 16px; min-height: 44px; text-align: center;
+}
+.btn-primary:disabled { opacity: .45; }
+.btn-ghost {
+  font-size: 16px; color: var(--ink); background: transparent;
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px 16px; min-height: 44px; text-align: left;
+}
+.btn-ghost:hover { border-color: var(--accent); }
+.btn-icon {
+  font-size: 16px; color: var(--ink); background: transparent;
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 8px 12px; min-height: 44px; min-width: 44px; text-align: center;
+}
+.btn-icon:hover { border-color: var(--accent); }
+.card {
+  color: var(--ink); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; min-height: 44px; text-align: left;
+}
+.card:hover { border-color: var(--accent); }
+.card:disabled { opacity: .5; }
+.card-mastery {
+  color: var(--ink); background: var(--panel);
+  border: 1px solid var(--p1); border-radius: 12px;
+  padding: 12px 14px; min-height: 44px; text-align: left;
+}
+.card-mastery:hover { border-color: var(--accent); }
+.card-mastery:disabled { opacity: .5; }
+
+/* ------------------------------------------------------------- panels */
+.app-header { background: var(--header); border-bottom: 1px solid var(--line); padding: 8px 14px; }
+.screen-bg { background: var(--bg); }
+.hud { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; }
+.sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+.fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.chip { border-radius: 12px; }
+.title-art { border: 1px solid var(--line); border-radius: 12px; background: var(--well); }
+.results-art { border-radius: 16px 16px 0 0; background: var(--well); }

@@ -41,4 +41,4 @@
     return out;
   };
   root.FFPlatformStrings.LOCALES = Object.keys(STRINGS);
-})(typeof self !== 'undefined' ? self : this);
+})(typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : this);
