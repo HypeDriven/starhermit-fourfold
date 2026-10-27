@@ -396,6 +396,7 @@
         },
         "style": "solid"
       },
+      "radius": 0,
       "padding": {
         "top": 8,
         "end": 14,
@@ -455,6 +456,41 @@
     ".results-art": {
       "background": "$well",
       "radius": [16, 16, 0, 0]
+    },
+    ".btn-compact": {
+      "background": "$panel-2",
+      "border": {
+        "width": 1,
+        "color": "$line",
+        "style": "solid"
+      },
+      "radius": 12,
+      "padding": {
+        "top": 6,
+        "end": 8,
+        "bottom": 6,
+        "start": 8
+      },
+      "minHeight": 40,
+      "text": {
+        "color": "$ink",
+        "size": 15,
+        "align": "center"
+      },
+      "hovered": {
+        "border": {
+          "color": "$accent"
+        }
+      },
+      "disabled": {
+        "opacity": 0.45
+      }
+    },
+    ".objective-small": {
+      "text": {
+        "color": "$ink-dim",
+        "size": 13
+      }
     }
   },
   "animations": {},

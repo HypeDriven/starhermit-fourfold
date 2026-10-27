@@ -27,7 +27,7 @@
 import {
   ACESFilmicToneMapping, AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, Color, ConeGeometry, CylinderGeometry,
   CircleGeometry, DataTexture, DirectionalLight, DynamicDrawUsage, ExtrudeGeometry, Group, HemisphereLight, InstancedMesh,
-  LatheGeometry, Matrix4, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial,
+  LatheGeometry, LinearFilter, LinearMipmapLinearFilter, Matrix4, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial,
   OctahedronGeometry, OrthographicCamera, PMREMGenerator, Path, PlaneGeometry, Points, PointsMaterial, RGBAFormat, RepeatWrapping,
   RoomEnvironment, Shape, ShadowMaterial, TorusGeometry, Vector2, Vector3, renderer, scene,
 } from "starhermit:scene";
@@ -67,6 +67,10 @@ function dataTexture(n: number, paint: (x: number, y: number) => [number, number
     data[o] = r; data[o + 1] = g; data[o + 2] = b; data[o + 3] = a;
   }
   const t = new DataTexture(data, n, n, RGBAFormat);
+  // Smooth like the old canvas textures (a DataTexture samples nearest by default).
+  t.magFilter = LinearFilter;
+  t.minFilter = LinearMipmapLinearFilter;
+  t.generateMipmaps = true;
   t.needsUpdate = true;
   return t;
 }

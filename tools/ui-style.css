@@ -106,7 +106,7 @@
 .card-mastery:disabled { opacity: .5; }
 
 /* ------------------------------------------------------------- panels */
-.app-header { background: var(--header); border-bottom: 1px solid var(--line); padding: 8px 14px; }
+.app-header { background: var(--header); border-bottom: 1px solid var(--line); border-radius: 0; padding: 8px 14px; }
 .screen-bg { background: var(--bg); }
 .hud { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; }
 .sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
@@ -114,3 +114,12 @@
 .chip { border-radius: 12px; }
 .title-art { border: 1px solid var(--line); border-radius: 12px; background: var(--well); }
 .results-art { border-radius: 16px 16px 0 0; background: var(--well); }
+/* short landscape: the tray's tighter buttons (the old @media max-height 500px rule) */
+.btn-compact {
+  font-size: 15px; color: var(--ink); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 6px 8px; min-height: 40px; text-align: center;
+}
+.btn-compact:hover { border-color: var(--accent); }
+.btn-compact:disabled { opacity: .45; }
+.objective-small { color: var(--ink-dim); font-size: 13px; }

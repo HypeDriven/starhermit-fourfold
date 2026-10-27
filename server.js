@@ -16,7 +16,9 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.webp': 'image/webp',
-  '.opus': 'audio/ogg'
+  '.opus': 'audio/ogg',
+  '.ts': 'text/plain; charset=utf-8',
+  '.jpg': 'image/jpeg'
 };
 
 function send(res, code, body, type) {

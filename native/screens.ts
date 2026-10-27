@@ -286,8 +286,8 @@ function hudPanel(w: number, compact: boolean): void {
     } else {
       ui.row("hud-top", () => { chip(); lbl(turn, "turn"); ui.spacer(); metaRow(); }, { spacing: 8, align: "center", width: inner });
     }
-    para(objectiveText(), inner, "objective");
-  }, { width: w, spacing: 6, style: "hud" });
+    para(objectiveText(), inner, compact && shortLandscape() ? "objective-small" : "objective");
+  }, { width: w, spacing: shortLandscape() ? 4 : 6, style: "hud", ...(shortLandscape() ? { padding: { top: 6, bottom: 6, start: 10, end: 10 } } : {}) });
 }
 
 function objectiveText(): string {
@@ -356,7 +356,7 @@ function boardColumns(w: number, h: number | null): void {
 
 function statusLine(w: number): void {
   const st = app.status;
-  ui.column("status", () => { if (st.text) para(st.text, w, st.error ? "status-error" : "status"); }, { width: w, height: 22 + (narrow() ? 20 : 0) });
+  ui.column("status", () => { if (st.text) para(st.text, w, st.error ? "status-error" : "status"); }, { width: w, height: shortLandscape() ? 40 : 22 + (narrow() ? 20 : 0), clip: true });
 }
 
 function tray(w: number, vertical: boolean): void {
@@ -372,13 +372,9 @@ function tray(w: number, vertical: boolean): void {
   ];
   const gap = vertical ? 6 : 8;
   const run = (it: [string, string, boolean, () => void], width: number): void => {
-    if (btn(it[0], it[1], "btn-center", { disabled: it[2] }, width, false)) it[3]();
+    if (btn(it[0], it[1], vertical ? "btn-compact" : "btn-center", { disabled: it[2] }, width, false)) it[3]();
   };
-  if (vertical) {
-    ui.column("tray", () => { for (const it of items) run(it, w); }, { width: w, spacing: gap });
-    return;
-  }
-  const perRow = narrow() ? 2 : 4;
+  const perRow = vertical || narrow() ? 2 : 4;
   const each = (w - gap * (perRow - 1)) / perRow;
   ui.column("tray", () => {
     for (let i = 0; i < items.length; i += perRow) {
@@ -438,6 +434,7 @@ function pauseSheet(): void {
   if (!open && A.clock.frame !== app.openedAt && app.overlay === "pause") A.closePause();
 }
 
+let resultsH = 400;
 function resultsSheet(): void {
   const s = A.session!;
   const st = s.state;
@@ -445,7 +442,15 @@ function resultsSheet(): void {
   const head = s.lessonDone ? { text: T("Lesson complete"), cls: "win" as const } : A.outcomeHeadline(st);
   const next = A.nextStage();
   ui.dialog(head.text, "", true, () => {
-    ui.column("results-sheet", () => {
+    // Short windows: the sheet scrolls inside 88 % of the height (the old max-height: 88svh).
+    const body = (inner: () => void): void => {
+      if (VH >= 560) { inner(); return; }
+      const maxH = Math.max(160, VH * 0.88 - 36);
+      const r = ui.scrollArea("results-scroll", { width: w + 8, height: Math.min(maxH, resultsH + 8) }, inner,
+        { padding: 4, ...(A.clock.frame - app.openedAt < 3 ? { scrollTo: { top: 0 } } : {}) });
+      resultsH = r.scrollHeight / SCALE;
+    };
+    body(() => ui.column("results-sheet", () => {
       const art = head.cls === "win" ? "results-win-img" : head.cls === "loss" ? "results-lose-img" : null;
       if (art && VH >= 560) ui.column("results-art", () => { /* background */ }, { width: w, height: 140, style: art });
       ui.style(head.cls === "win" ? "headline-win" : head.cls === "loss" ? "headline-loss" : "headline").paragraph(head.text, w);
@@ -466,7 +471,7 @@ function resultsSheet(): void {
       if (next && btn("res-next", T("Next: {name}", { name: T(next.name) }), "btn-primary", {}, w)) A.resultsNext();
       if (btn("res-retry", T("Play again"), "btn", {}, w)) A.resultsRetry();
       if (btn("res-menu", T("Back to menu"), "btn-ghost", {}, w)) A.resultsMenu();
-    }, { width: w, spacing: 12 });
+    }, { width: w, spacing: 12 }));
   });
 }
 

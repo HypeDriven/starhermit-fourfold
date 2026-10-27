@@ -1,14 +1,33 @@
 name=Fourfold
 description=Drop discs into a vertical board and connect four in a row before your opponent does.
-launch=index.html
 owner=2712e04e-461b-4d23-81ae-e40b429128a8
 server=score-script.js
 version=1.0.0
 rulesVersion=1
 contentVersion=1
 cover=cover.jpg
-control.colLeft=ArrowLeft | Focus previous column
-control.colRight=ArrowRight | Focus next column
+
+# StarHermit engine script game: one package, played natively by the
+# StarHermit client and in browsers by the engine's web runtime. Browsers open
+# launch=index.html, the loader `npm run package` writes (it pins the engine
+# on wiki.starhermit.com by hash; never edit it). Re-run `npm run package`
+# after every change and commit index.html + starhermit-files.json.
+launch=index.html
+engine.api=1
+engine.entry=native/main.ts
+engine.version=1.17.0
+engine.minor=19
+engine.capabilities=platform,storage,clipboard
+
+# Keyboard controls (players rebind keys and pads in the runtime's Options).
+# The board is also played with the pointer or touch: click or tap a column;
+# the tray holds Undo, Hint, Restart and Pause as buttons. Enter or Space on
+# a focused column drops there (the UI's own activation). The browser build's
+# action names colLeft / colRight were not lower-case, so key choices saved
+# by the old build for those two start from these defaults.
+engine.group.col_left=Board
+control.col_left=ArrowLeft | Focus previous column
+control.col_right=ArrowRight | Focus next column
 control.col1=Digit1+Numpad1 | Drop in column 1
 control.col2=Digit2+Numpad2 | Drop in column 2
 control.col3=Digit3+Numpad3 | Drop in column 3
@@ -18,8 +37,20 @@ control.col6=Digit6+Numpad6 | Drop in column 6
 control.col7=Digit7+Numpad7 | Drop in column 7
 control.col8=Digit8+Numpad8 | Drop in column 8
 control.col9=Digit9+Numpad9 | Drop in column 9
+engine.group.undo=Game
 control.undo=KeyU | Undo
 control.hint=KeyH | Hint
 control.restart=KeyR | Restart
 control.pause=KeyP | Pause
 control.back=Escape | Pause / resume / back
+
+# Gamepad defaults: the D-pad or left stick moves between columns (South,
+# the UI's activation, drops in the focused one), West hints, North undoes,
+# Select restarts, Start pauses, East goes back.
+engine.gamepad.col_left=DpadLeft+LeftStickLeft
+engine.gamepad.col_right=DpadRight+LeftStickRight
+engine.gamepad.hint=West
+engine.gamepad.undo=North
+engine.gamepad.restart=Select
+engine.gamepad.pause=Start
+engine.gamepad.back=East
