@@ -1,0 +1,38 @@
+# The deep searches run on the AI worker: Grandmaster Row (the Master's
+# eight-ply search) answers two drops while the board keeps drawing, then
+# Threefold Table's two rivals take their turns.
+until 600 Make four in a row
+frames 30
+click =Challenges
+until 120 Each challenge states its rules
+frames 10
+click =Grandmaster Row
+until 120 The master, unassisted
+frames 30
+key Digit4 1
+frames 5
+until 3000 =Your turn
+frames 5
+key Digit3 1
+frames 5
+until 3000 =Your turn
+frames 60
+save master
+key Escape 1
+until 60 Leave to menu
+frames 10
+click =Leave to menu
+until 120 Resume Grandmaster Row
+frames 10
+click =Challenges
+until 120 Each challenge states its rules
+frames 10
+click =Threefold Table
+until 120 Two rivals at one table
+frames 30
+key Digit4 1
+frames 5
+until 3000 =Your turn
+frames 60
+save threefold
+expect Drops
