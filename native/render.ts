@@ -28,7 +28,7 @@ import {
   ACESFilmicToneMapping, AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, Color, ConeGeometry, CylinderGeometry,
   CircleGeometry, DataTexture, DirectionalLight, DynamicDrawUsage, ExtrudeGeometry, Group, HemisphereLight, InstancedMesh,
   LatheGeometry, LinearFilter, LinearMipmapLinearFilter, Matrix4, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial,
-  OctahedronGeometry, OrthographicCamera, PMREMGenerator, Path, PlaneGeometry, Points, PointsMaterial, RGBAFormat, RepeatWrapping,
+  OctahedronGeometry, OrthographicCamera, PCFSoftShadowMap, PMREMGenerator, Path, PlaneGeometry, Points, PointsMaterial, RGBAFormat, RepeatWrapping,
   RoomEnvironment, Shape, ShadowMaterial, TorusGeometry, Vector2, Vector3, renderer, scene,
 } from "starhermit:scene";
 import type { Material, Texture } from "starhermit:scene";
@@ -111,46 +111,14 @@ function discProfile(): Vector2[] {
   return pts.reverse().map(([x, y]) => new Vector2(x, y));
 }
 
-// ------------------------------------------------------------------ the backdrop
-// The runtime tone-maps (and grades) the background colour with the scene
-// whenever its post path runs (every tier here: Low's MSAA too), as the old
-// EffectComposer chain did. As the old view, the backdrop is cleared with the
-// linear colour that ACES (three's fit, at this exposure) and the grade map
-// back onto the theme's background, so the region reads as the page did.
-const ACES_IN = [[0.59719, 0.35458, 0.04823], [0.07600, 0.90834, 0.01566], [0.02840, 0.13383, 0.83777]];
-const ACES_OUT = [[1.60475, -0.53108, -0.07367], [-0.10208, 1.10813, -0.00605], [-0.00327, -0.07276, 1.07602]];
-const EXPOSURE = 1.1;
-function acesFit(v: number): number { return (v * (v + 0.0245786) - 0.000090537) / (v * (0.983729 * v + 0.4329510) + 0.238081); }
-function srgbEncode(c: number): number { return c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055; }
-function smooth(a: number, b: number, x: number): number { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
-/** Linear scene light → the displayed sRGB value (tone mapping, then the display grade when on). */
-function display(rgb: number[], grade: boolean): number[] {
-  const c = rgb.map((x) => x * EXPOSURE / 0.6);
-  const a = ACES_IN.map((r) => acesFit(r[0]! * c[0]! + r[1]! * c[1]! + r[2]! * c[2]!));
-  let o = ACES_OUT.map((r) => srgbEncode(Math.min(1, Math.max(0, r[0]! * a[0]! + r[1]! * a[1]! + r[2]! * a[2]!))));
-  if (grade) {
-    const l = 0.2126 * o[0]! + 0.7152 * o[1]! + 0.0722 * o[2]!;
-    const k = smooth(0.2, 0.8, l);
-    const sh = [0.97, 0.99, 1.04], hi = [1.03, 1.0, 0.97];
-    o = o.map((v, i) => Math.min(1, Math.max(0, ((l + (v - l) * 1.1) - 0.5) * 1.09 + 0.5) * (sh[i]! + (hi[i]! - sh[i]!) * k)));
-  }
-  return o;
-}
-function srgbDecode(c: number): number { return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
-/** The linear colour that shows as the sRGB `hexColor` (the old invertToneMap, with the grade when on). */
-function backdrop(hexColor: number, grade: boolean, out: Color): void {
-  const t = [(hexColor >> 16) & 255, (hexColor >> 8) & 255, hexColor & 255].map((v) => srgbDecode(v / 255));
-  const f = (x: number[]): number[] => display(x, grade).map(srgbDecode);
-  const x = t.slice();
-  for (let it = 0; it < 80; it++) {
-    const y = f(x);
-    for (let i = 0; i < 3; i++) {
-      const probe = x.slice(); probe[i] = probe[i]! + 1e-4;
-      const d = (f(probe)[i]! - y[i]!) / 1e-4 || 1;
-      x[i] = Math.max(0, x[i]! + (t[i]! - y[i]!) / d * 0.8);
-    }
-  }
-  out.setRGB(x[0]!, x[1]!, x[2]!);
+/** three r160 scaled scene.environment by each material's envMapIntensity; r185 (minor 23+) scales only
+ * a material's own envMap, so every standard material carries the room as its envMap (as r160 drew it). */
+function envMaps(): void {
+  const env = scene.environment;
+  scene.traverse((o) => {
+    const m = (o as Mesh).material;
+    for (const x of Array.isArray(m) ? m : m ? [m] : []) if (x instanceof MeshStandardMaterial && x.envMap !== env) x.envMap = env;
+  });
 }
 
 // ------------------------------------------------------------------ state
@@ -167,12 +135,11 @@ let time = 0;
 const camera = new OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
 camera.position.set(0, 0, 20);
 camera.lookAt(0, 0, 0);
-const key = new DirectionalLight(0xffffff, 2.4 / PI);
+const key = new DirectionalLight(0xffffff, 2.4);
 key.position.copy(KEY_POS);
 key.shadow.bias = -0.0006;
 key.shadow.normalBias = 0.015;
-key.shadow.distance = 30;
-const fill = new HemisphereLight(0xffffff, 0x202840, 1.1 / PI);
+const fill = new HemisphereLight(0xffffff, 0x202840, 1.1);
 const boardGroup = new Group();
 const bg = new Color(0x0e1424);
 let envTex: Texture | null = null;
@@ -280,6 +247,7 @@ function build(): void {
   renderer.camera = camera;
   renderer.toneMapping = ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
+  renderer.shadowMap.type = PCFSoftShadowMap;
   scene.background = bg;
   scene.add(key, key.target, fill, boardGroup, glow, wallShadow, points);
   buildRoundGeos(look ? look.budget.segments : 1);
@@ -562,7 +530,8 @@ export function applyLook(next: Look): void {
     catch (e) { console.warn(`environment: ${String(e)}`); }
   }
   scene.environment = next.reflections ? envTex : null;
-  fill.intensity = (next.reflections ? 0.75 : 1.1) / PI;
+  fill.intensity = next.reflections ? 0.75 : 1.1;
+  envMaps();
   const b = next.budget;
   const nextPlate = plateMats[b.material] ?? plateMats.standard!;
   if (nextPlate !== plateMat) { plateMat = nextPlate; if (plate) plate.material = plateMat; }
@@ -615,7 +584,9 @@ export function setVisible(v: boolean): void {
   wallShadow.visible = v && !!look && SHADOW_MAP[look.shadows] > 0;
   applyBackdrop();
 }
-function applyBackdrop(): void { backdrop(visible && theme ? theme.palette.bg : 0x0e1424, !!look?.grade, bg); }
+// From minor 20 a Color background is not tone-mapped or graded, so it is the page colour as is
+// (the page cleared its post chain with an inverse-tone-mapped colour to show exactly this).
+function applyBackdrop(): void { bg.setHex(visible && theme ? theme.palette.bg : 0x0e1424); }
 export function sync(state: State): void {
   if (!built) return;
   if (L.cols !== state.cols || L.rows !== state.rows) { snap = state; rebuild(state.cols, state.rows); }
@@ -669,8 +640,13 @@ export function update(dtRaw: number, rect: Rect, W: number, H: number, paused: 
     wallShadow.scale.set(vw + 2, vh + 2, 1);
     glow.scale.set(vw, vh, 1);   // fades to nothing at the region's edges
     pMat.size = Math.max(4, 0.2 * s / Math.max(1, frameScale));
-    // The shadow box fitted to the board and its drop shadow.
-    key.shadow.distance = 30;
+    // Shadow frustum fitted tightly around the board and its drop shadow (the page's fitShadow).
+    const ext = Math.max(L.w, L.h) / 2 + 1.2;
+    const sc = key.shadow.camera as OrthographicCamera;
+    sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext;
+    sc.near = 2; sc.far = 22;
+    sc.updateProjectionMatrix();
+    envMaps();
   }
   if (!paused && !reduced) time += dt;
   if (!paused || anims.size) step(paused ? dt : dt, time);

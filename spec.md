@@ -1,6 +1,6 @@
 # Fourfold — Game Design Document (running spec)
 
-**Status:** running specification. Present tense; describes the game as it ships: a StarHermit engine script game (engine 1.24.0, host API 1.21), played natively by the StarHermit client and in browsers by the engine's web runtime. Design intent that the code does not yet implement is collected in the final section only.
+**Status:** running specification. Present tense; describes the game as it ships: a StarHermit engine script game (engine 1.26.1, host API 1.28), played natively by the StarHermit client and in browsers by the engine's web runtime. Design intent that the code does not yet implement is collected in the final section only.
 
 ## 1. Overview
 
@@ -20,7 +20,7 @@ File map (what the package and the tests load):
 
 | Path | Responsibility |
 |---|---|
-| `starhermit.txt` | Manifest: name, owner, `server=score-script.js`, cover, `launch=index.html`, `engine.api=1`, `engine.entry=native/main.ts`, `engine.version=1.24.0`, `engine.minor=19`, `engine.capabilities=platform,storage,clipboard`, `control.*` and `engine.gamepad.*` per action |
+| `starhermit.txt` | Manifest: name, owner, `server=score-script.js`, cover, `launch=index.html`, `engine.api=1`, `engine.entry=native/main.ts`, `engine.version=1.26.1`, `engine.minor=28`, `engine.capabilities=platform,storage,clipboard`, `control.*` and `engine.gamepad.*` per action |
 | `index.html`, `starhermit-files.json` | The engine's web loader and the package's file index (written by `npm run package`; never edited) |
 | `native/main.ts` | Entry: lifecycle (start, suspend, resume, quit), actions (keys and pads), the frame (look per graphics tier, preferences, audio, screens, board) |
 | `native/app.ts` | Controller: screen state, sessions (start from a stable key, replay a saved log), the game clock, the AI turn, undo, hints, restart, resign, lessons, results, progression, achievements, the resumable save, the status line |
@@ -160,7 +160,7 @@ One screen shows at a time under the header bar (`▮ FOURFOLD` wordmark, the si
 
 **Hero.** The slab: a translucent frame (standard material, opacity 0.55, roughness 0.25) with instanced socket rings and dark recesses, seen straight on by an orthographic camera framed so the board fits the board region (the region shows the theme's background, the page around it the page colour), lit by one directional key from upper-left tinted by the theme's `light` colour plus a hemisphere fill (three.js r160 intensities ÷ π), ACES tone mapping at exposure 1.1. Discs are cylinders (r 0.40, h 0.22) with a relief marker matching the player's glyph (ring, octahedron, three-sided cone, box) so ownership survives colour blindness. Sealed columns are plugged in frame glass. That is the **Plain** board (Low); the **Detailed** board (Balanced and up) adds a perforated, bevelled front plate of frosted glass (`ExtrudeGeometry` with a hole per cell, clear-coated physical material with a value-noise bump on High/Ultra) in front of the discs, chip-profiled discs (lathe: raised rim, recessed face, rounded edge), shadow catchers for the plate rims in each recess and the board's drop shadow on the wall behind, and a faint pool of the theme's light behind the board fading to nothing at the region's edge.
 
-**Graphics.** The runtime's graphics level (Options › Graphics: Auto or one of ten levels) gives the tier (`frame().quality`), and each tier is one of the browser build's presets (`native/quality.ts`). The backdrop is cleared with the linear colour that the tone mapping and the grade map back onto the theme's background, so the board region reads as the page colour does (the runtime tone-maps the background with the scene, as the old post chain did).
+**Graphics.** The runtime's graphics level (Options › Graphics: Auto or one of ten levels) gives the tier (`frame().quality`), and each tier is one of the browser build's presets (`native/quality.ts`). The backdrop is the theme's background colour as is (the runtime does not tone-map or grade a Color background, so it reads as the page colour, which the old page reached by inverse tone mapping). Lights are three.js r160's intensities as written, the key casts PCF soft shadows in the page's fitted box (board half-extent + 1.2, near 2, far 22), and with reflections on every standard material carries the room environment as its own envMap so its `envMapIntensity` scales it as r160 did.
 
 | Tier | Shadows | AO | Bloom | Grade | AA | Reflections | Detail | Particles |
 |---|---|---|---|---|---|---|---|---|
