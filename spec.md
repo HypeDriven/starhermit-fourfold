@@ -1,6 +1,6 @@
 # Fourfold — Game Design Document (running spec)
 
-**Status:** running specification. Present tense; describes the game as it ships: a StarHermit engine script game (engine 1.29.0, host API 1.31), played natively by the StarHermit client and in browsers by the engine's web runtime. Design intent that the code does not yet implement is collected in the final section only.
+**Status:** running specification. Present tense; describes the game as it ships: a StarHermit engine script game (engine 1.30.0, host API 1.32), played natively by the StarHermit client and in browsers by the engine's web runtime. Design intent that the code does not yet implement is collected in the final section only.
 
 ## 1. Overview
 
@@ -20,7 +20,7 @@ File map (what the package and the tests load):
 
 | Path | Responsibility |
 |---|---|
-| `starhermit.txt` | Manifest: name, owner, `server=score-script.js`, cover, `launch=index.html`, `engine.api=1`, `engine.entry=native/main.ts`, `engine.version=1.29.0`, `engine.minor=31`, `engine.capabilities=platform,storage,clipboard`, `control.*` and `engine.gamepad.*` per action |
+| `starhermit.txt` | Manifest: name, owner, `server=score-script.js`, cover, `launch=index.html`, `engine.api=1`, `engine.entry=native/main.ts`, `engine.version=1.30.0`, `engine.minor=32`, `engine.capabilities=platform,storage,clipboard`, `control.*` and `engine.gamepad.*` per action |
 | `index.html`, `starhermit-files.json` | The engine's web loader and the package's file index (written by `npm run package`; never edited) |
 | `native/main.ts` | Entry: lifecycle (start, suspend, resume, quit), actions (keys and pads), the frame (look per graphics tier, preferences, audio, screens, board) |
 | `native/app.ts` | Controller: screen state, sessions (start from a stable key, replay a saved log), the game clock, the AI turn, undo, hints, restart, resign, lessons, results, progression, achievements, the resumable save, the status line |
