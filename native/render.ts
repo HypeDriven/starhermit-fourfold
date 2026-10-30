@@ -560,7 +560,8 @@ export function applyLook(next: Look): void {
     blendIntensity: 0.7, radius: 0.3, distanceExponent: 1.2, thickness: 0.5, scale: 1.0, samples: hi ? 16 : 8, resolution: b.aoRes,
     denoise: { lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: hi ? 6 : 4, rings: 2, samples: hi ? 16 : 8, radiusExponent: 2 },
   };
-  renderer.bloom = next.bloom ? { strength: 0.45, radius: 0.35, threshold: 2.1, resolution: b.bloomRes } : null;
+  // three r160 page: minor 29 bloom follows r185 UnrealBloomPass, so the page strength is squared (pages on r177+ keep theirs).
+  renderer.bloom = next.bloom ? { strength: 0.45 * 0.45, radius: 0.35, threshold: 2.1, resolution: b.bloomRes } : null;
   renderer.grade = next.grade ? {
     space: "display", contrast: 0.09, saturation: 1.1,
     shadows: [0.97, 0.99, 1.04], highlights: [1.03, 1.0, 0.97], split: [0.2, 0.8],
