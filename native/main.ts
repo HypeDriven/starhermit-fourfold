@@ -6,7 +6,7 @@
 // starhermit:ui (screens.ts), the board starhermit:scene (render.ts), the
 // controller app.ts, the AI's searches a worker (ai.ts), saves and the
 // platform platform.ts.
-import { frame, onFixedUpdate, onPreferencesChange, onQuit, onRender, onResume, onStart, onSuspend, onUpdate, preferences, setFixedRate } from "starhermit:engine";
+import { frame, levelSettings, onFixedUpdate, onPreferencesChange, onQuit, onRender, onResume, onStart, onSuspend, onUpdate, preferences, setFixedRate } from "starhermit:engine";
 import { onAction } from "starhermit:input";
 import { onSessionEnded } from "starhermit:platform";
 import * as ui from "starhermit:ui";
@@ -91,10 +91,10 @@ onAction((e) => {
 let lookKey = "";
 function applyLook(): void {
   const f = frame();
-  const key = `${f.quality}:${f.levelIndex}`;
+  const key = f.level;
   if (key === lookKey) return;
   lookKey = key;
-  render.applyLook(lookFor(f.quality, f.levelIndex));
+  render.applyLook(lookFor(levelSettings(f.level)));
 }
 onFixedUpdate(() => {
   if (hidden) return;
@@ -105,7 +105,6 @@ onUpdate((dt) => {
   frameDt = dt;
   applyLook();
   applyPrefs();
-  audio.update();
 });
 onRender(() => {
   drawScreens();

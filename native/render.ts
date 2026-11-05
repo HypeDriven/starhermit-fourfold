@@ -33,7 +33,7 @@ import {
 } from "starhermit:scene";
 import type { Material, Texture } from "starhermit:scene";
 import type { State, Theme } from "./classic.ts";
-import { MAX_PARTICLES, PARTICLE_COUNT, SHADOW_MAP, type Look } from "./quality.ts";
+import { MAX_PARTICLES, PARTICLE_COUNT, type Look } from "./quality.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
@@ -381,7 +381,7 @@ function applyDetail(): void {
   if (d !== !!plate) buildPlate();
   if (sockets) sockets.visible = !d;
   frameMat.opacity = d ? 0.35 : 0.55;
-  const shadows = !!look && SHADOW_MAP[look.shadows] > 0;
+  const shadows = !!look && look.shadows > 0;
   recessShadow.visible = d && shadows;
   wallShadow.visible = shadows;
   glow.visible = d;
@@ -521,10 +521,10 @@ export function applyLook(next: Look): void {
   const prev = look;
   look = next;
   if (!built) build();
-  const size = SHADOW_MAP[next.shadows];
+  const size = next.shadows;
   renderer.shadowMap.enabled = size > 0;
   key.castShadow = size > 0;
-  if (size > 0) key.shadow.mapSize = size;
+  if (size > 0) key.shadow.mapSize = size; // the level's size: at minor 23+ the engine keeps the game's mapSize
   if (next.reflections && !envTex) {
     try { envTex = new PMREMGenerator(renderer).fromScene((() => { const room = new RoomEnvironment(renderer); room.position.y = 0 /* pre-r183 page: room at origin (minor 32 default is -3.5) */; return room; })(), 0.04).texture; }
     catch (e) { console.warn(`environment: ${String(e)}`); }
@@ -555,13 +555,13 @@ export function applyLook(next: Look): void {
   // Post: GTAO contact darkening, bloom on the emissive winning line, sparkles and glints only
   // (threshold 2.1 in linear scene units, where lit disc faces peak near 2), the colour grade
   // (the old S-curve's slope, +10 % saturation, cool shadows / warm highlights) and FXAA / SMAA / MSAA.
-  const hi = next.ao === "high";
-  renderer.ao = next.ao === "off" ? null : {
-    blendIntensity: 0.7, radius: 0.3, distanceExponent: 1.2, thickness: 0.5, scale: 1.0, samples: hi ? 16 : 8, resolution: b.aoRes,
-    denoise: { lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: hi ? 6 : 4, rings: 2, samples: hi ? 16 : 8, radiusExponent: 2 },
+  const ao = next.ao, hi = !!ao && ao.resolution >= 1; // the engine's "high" AO: full resolution
+  renderer.ao = ao && {
+    blendIntensity: 0.7, radius: 0.3, distanceExponent: 1.2, thickness: 0.5, scale: 1.0, samples: ao.samples, resolution: ao.resolution,
+    denoise: { lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: hi ? 6 : 4, rings: 2, samples: ao.denoiseSamples, radiusExponent: 2 },
   };
   // three r160 page: the engine's r160 UnrealBloomPass model (minor 30) at the page's own strength.
-  renderer.bloom = next.bloom ? { strength: 0.45, radius: 0.35, threshold: 2.1, resolution: b.bloomRes, model: "r160" } : null;
+  renderer.bloom = next.bloom === null ? null : { strength: 0.45, radius: 0.35, threshold: 2.1, resolution: next.bloom, model: "r160" };
   renderer.grade = next.grade ? {
     space: "display", contrastCurve: "s", contrast: 0.18, saturation: 1.1,
     shadows: [0.97, 0.99, 1.04], highlights: [1.03, 1.0, 0.97], split: [0.2, 0.8],
@@ -584,7 +584,7 @@ export function setVisible(v: boolean): void {
   visible = v;
   boardGroup.visible = v;
   glow.visible = v && detailed();
-  wallShadow.visible = v && !!look && SHADOW_MAP[look.shadows] > 0;
+  wallShadow.visible = v && !!look && look.shadows > 0;
   applyBackdrop();
 }
 // Since 1.29 a Color background goes through the grade. As the page did, its post chain clears
@@ -614,7 +614,7 @@ function applyBackdrop(): void {
   bg.setHex(visible && theme ? theme.palette.bg : 0x0e1424);
   // The grade keeps the page colour (encoded, as the page's uKeep) wherever the backdrop shows.
   if (look?.grade && renderer.grade) renderer.grade = { ...renderer.grade, keep: { color: bg.getHex() } };
-  if (look && (look.bloom || look.grade || look.ao !== "off")) invertToneMap(bg, renderer.toneMappingExposure);
+  if (look && (look.bloom !== null || look.grade || look.ao !== null)) invertToneMap(bg, renderer.toneMappingExposure);
 }
 export function sync(state: State): void {
   if (!built) return;

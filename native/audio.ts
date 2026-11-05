@@ -7,10 +7,10 @@
 // The synthesized stand-ins it played while a clip decoded are not ported (a
 // live synthesis graph makes clip loads fail on the engine's web runtime,
 // the arrow-exodus port's finding), so a cue whose clip is still loading is
-// silent; clips load once the mixer runs (natively at once, in a browser
-// after the first press), one at a time. Every cue has a visible
+// silent; every clip loads at once in onStart (each loaded clip reaches the
+// mixer, natively and on the web). Every cue has a visible
 // counterpart (status line, HUD, results), so nothing is audio-only.
-import { context, loadClip, play as playClip, type AudioClip } from "starhermit:audio";
+import { loadClip, play as playClip, type AudioClip } from "starhermit:audio";
 import type { Result } from "./classic.ts";
 
 export type Cue =
@@ -40,20 +40,14 @@ const SAMPLES: Record<Cue, string[]> = {
 const GAIN = 0.8;
 
 const clips = new Map<string, AudioClip>();
-const queue: string[] = [];
-let loading = false;
-let wanted = false;
 let suspended = false;
 
-function load(name: string): void { if (!queue.includes(name) && !clips.has(name)) queue.push(name); }
-function pump(): void {
-  if (loading || !queue.length) return;
-  const name = queue.shift()!;
-  loading = true;
-  loadClip(`sfx/${name}.opus`).then((c) => { clips.set(name, c); loading = false; }, (e: unknown) => { console.warn(`sfx ${name}: ${String(e)}`); loading = false; });
+/** Loads every clip at once (onStart); a cue whose clip is still loading is skipped. */
+export function loadSfx(): void {
+  for (const names of Object.values(SAMPLES)) for (const name of names) {
+    loadClip(`sfx/${name}.opus`).then((c) => { clips.set(name, c); }, (e: unknown) => console.warn(`sfx ${name}: ${String(e)}`));
+  }
 }
-/** Asks for the clips; they load once the mixer runs (see update). */
-export function loadSfx(): void { wanted = true; }
 export function setSuspended(on: boolean): void { suspended = on; }
 
 /** Plays a cue (once its clip is loaded). */
@@ -63,7 +57,7 @@ export function play(cue: Cue): void {
   const clip = clips.get(file);
   if (!clip || suspended) return;
   try { playClip(clip, { bus: cue === "menu-tap" ? "interface" : "effects", gain: GAIN }); }
-  catch { clips.delete(file); load(file); } // a clip the mixer lost: load it again
+  catch { /* the mixer is full this frame: skip it */ }
 }
 
 /** Plays the cue for an applyCommand result (sfx.js playResult): its events, else its rejection. */
@@ -73,12 +67,3 @@ export function playResult(res: Result | null | undefined): void {
   for (const e of res.events) if (e && e.t in SAMPLES) play(e.t as Cue);
 }
 
-/** Each frame: the clips once the mixer runs, one at a time. */
-export function update(): void {
-  if (context.state !== "running") return;
-  if (wanted) {
-    wanted = false;
-    for (const names of Object.values(SAMPLES)) for (const n of names) load(n);
-  }
-  pump();
-}

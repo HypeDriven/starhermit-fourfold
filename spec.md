@@ -160,23 +160,25 @@ One screen shows at a time under the header bar (`▮ FOURFOLD` wordmark, the si
 
 **Hero.** The slab: a translucent frame (standard material, opacity 0.55, roughness 0.25) with instanced socket rings and dark recesses, seen straight on by an orthographic camera framed so the board fits the board region (the region shows the theme's background, the page around it the page colour), lit by one directional key from upper-left tinted by the theme's `light` colour plus a hemisphere fill (three.js r160 intensities ÷ π), ACES tone mapping at exposure 1.1. Discs are cylinders (r 0.40, h 0.22) with a relief marker matching the player's glyph (ring, octahedron, three-sided cone, box) so ownership survives colour blindness. Sealed columns are plugged in frame glass. That is the **Plain** board (Low); the **Detailed** board (Balanced and up) adds a perforated, bevelled front plate of frosted glass (`ExtrudeGeometry` with a hole per cell, clear-coated physical material with a value-noise bump on High/Ultra) in front of the discs, chip-profiled discs (lathe: raised rim, recessed face, rounded edge), shadow catchers for the plate rims in each recess and the board's drop shadow on the wall behind, and a faint pool of the theme's light behind the board fading to nothing at the region's edge.
 
-**Graphics.** The runtime's graphics level (Options › Graphics: Auto or one of ten levels) gives the tier (`frame().quality`), and each tier is one of the browser build's presets (`native/quality.ts`). The backdrop is the theme's background colour as is (the runtime does not tone-map or grade a Color background, so it reads as the page colour, which the old page reached by inverse tone mapping). Lights are three.js r160's intensities as written, the key casts PCF soft shadows in the page's fitted box (board half-extent + 1.2, near 2, far 22), and with reflections on every standard material carries the room environment as its own envMap so its `envMapIntensity` scales it as r160 did.
+**Graphics.** The runtime's graphics level (Options › Graphics: Auto or one of ten levels) gives the effects the engine owns — key-light shadows and their map size, AO resolution and samples, bloom resolution, the grade, the anti-aliasing mode — from its own table (`levelSettings()`, the same for every StarHermit game), and the tier (`frame().quality`) picks the browser build's art preset (`native/quality.ts`). Low keeps MSAA where the level has none (an engine 1.36.1 bug recolours the scene with anti-aliasing off) until engine 1.36.2. The backdrop is the theme's background colour as is (the runtime does not tone-map or grade a Color background, so it reads as the page colour, which the old page reached by inverse tone mapping). Lights are three.js r160's intensities as written, the key casts PCF soft shadows in the page's fitted box (board half-extent + 1.2, near 2, far 22), and with reflections on every standard material carries the room environment as its own envMap so its `envMapIntensity` scales it as r160 did.
 
-| Tier | Shadows | AO | Bloom | Grade | AA | Reflections | Detail | Particles |
+| Tier (anchor level) | Shadows | AO | Bloom | Grade | AA | Reflections | Detail | Particles |
 |---|---|---|---|---|---|---|---|---|
-| Low | off | off | off | off | MSAA | off | plain | off |
-| Balanced | 512 | off | on | on | FXAA | on | detailed | low (60) |
-| High | 1024 | on | on | on | SMAA | on | detailed | high (160) |
-| Ultra | 2048 | high | on | on | MSAA | on | detailed | high |
+| Low (quantum) | off | off | off | off | MSAA | off | plain | off |
+| Balanced (molecular) | 1024 | off | ½ | on | FXAA | on | detailed | low (60) |
+| High (terrestrial) | 2048 | ½, 8 samples | ½ | on | SMAA | on | detailed | high (160) |
+| Ultra (galactic) | 4096 | full, 16 samples | full | on | MSAA | on | detailed | high |
 
-| Tier | Discs, frame, sockets, markers | Detailed chips and plate | Round-geometry LOD | Plate bump texture | Sparks (× puffs and sparkles) | Bloom / GTAO resolution |
-|---|---|---|---|---|---|---|
-| Low | Lambert | Lambert | ½ | 64 px | 0.5× | ½ / ½ |
-| Balanced | Standard | Standard | ¾ | 128 px | 0.75× | ½ / ½ |
-| High | Standard | clearcoated Physical | 1 | 128 px | 1× | ½ / ½ |
-| Ultra | Standard | clearcoated Physical | 1.5 | 256 px | 1.5× | full / full |
+The levels between follow the engine's table (atomic adds the grade and FXAA; cellular SMAA and 2048 shadows; planetary 4096 shadows and 12 AO samples; stellar full-resolution AO 16 and bloom).
 
-Sparks grow within a tier by the level (≤ 2×). Post effects are the runtime's: GTAO contact darkening, bloom (threshold 2.1 in linear units, so only the emissive winning line, sparkles and glints bloom), the display-space grade (the old S-curve's slope, +10 % saturation, cool shadows / warm highlights), FXAA / SMAA / MSAA. Reflections are a filtered `RoomEnvironment` (`envMapIntensity` 0.3 discs, 0.35 plate, hemisphere fill lowered to compensate). Render scale, pixel-ratio cap, adaptive resolution, the frame-rate limit and readout, and the shadow map ceiling are the runtime's options. Gameplay is identical on every tier.
+| Tier | Discs, frame, sockets, markers | Detailed chips and plate | Round-geometry LOD | Plate bump texture | Sparks (× puffs and sparkles) |
+|---|---|---|---|---|---|
+| Low | Lambert | Lambert | ½ | 64 px | 0.5× |
+| Balanced | Standard | Standard | ¾ | 128 px | 0.75× |
+| High | Standard | clearcoated Physical | 1 | 128 px | 1× |
+| Ultra | Standard | clearcoated Physical | 1.5 | 256 px | 1.5× |
+
+Sparks grow within a tier by the level's particle budget against the tier's anchor level (≤ 2×). Post effects are the runtime's: GTAO contact darkening, bloom (threshold 2.1 in linear units, so only the emissive winning line, sparkles and glints bloom), the display-space grade (the old S-curve's slope, +10 % saturation, cool shadows / warm highlights), FXAA / SMAA / MSAA. Reflections are a filtered `RoomEnvironment` (`envMapIntensity` 0.3 discs, 0.35 plate, hemisphere fill lowered to compensate). Render scale, pixel-ratio cap, adaptive resolution and the frame-rate limit and readout are the runtime's options. Gameplay is identical on every tier.
 
 **Shape language.** Rounded slab, circular sockets, 12 px radii on UI, 16 px on sheets; thin 1 px line borders.
 
@@ -186,7 +188,7 @@ Sparks grow within a tier by the level (≤ 2×). Post effects are the runtime's
 
 ## 9. Audio direction (`native/audio.ts`)
 
-There is no music and no ambience by design: the game is a quiet table. Every cue plays a 48 kHz mono Opus clip, loudness-normalised to −20 LUFS, on the runtime's mixer — effects on the "effects" bus, the menu tap on "interface" (volumes and mute are Options › Audio). Clips load one at a time once the mixer runs (natively at once, in a browser after the first press); until a clip has loaded its cue is silent. `drop` picks one of three variants (unseeded; cosmetic).
+There is no music and no ambience by design: the game is a quiet table. Every cue plays a 48 kHz mono Opus clip, loudness-normalised to −20 LUFS, on the runtime's mixer — effects on the "effects" bus, the menu tap on "interface" (volumes and mute are Options › Audio). Every clip loads at once at start (each loaded clip reaches the mixer, natively and in a browser); until a clip has loaded its cue is silent, and a play the mixer can't take this frame is skipped. `drop` picks one of three variants (unseeded; cosmetic).
 
 | Event id | File | Sound | Used when |
 |---|---|---|---|

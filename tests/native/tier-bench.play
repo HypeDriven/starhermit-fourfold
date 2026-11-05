@@ -1,0 +1,24 @@
+# Graphics-tier bench (tools/engine-tier-bench.mjs): Practice against Steady AI, four of the player's
+# drops by number key and the AI's replies measured: falling discs, landing puffs, the frosted plate.
+until 600 Make four in a row
+frames 150
+click =Play
+until 120 Pick an opponent
+frames 10
+click =Steady AI
+until 120 Your turn
+frames 120
+measure start
+key Digit4 1
+until 300 =Your turn
+frames 40
+key Digit3 1
+until 300 =Your turn
+frames 40
+key Digit5 1
+until 300 =Your turn
+frames 40
+key Digit2 1
+until 300 =Your turn
+frames 200
+measure stop
