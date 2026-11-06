@@ -10,8 +10,7 @@ import { frame, levelSettings, onFixedUpdate, onPreferencesChange, onQuit, onRen
 import { onAction } from "starhermit:input";
 import { onSessionEnded } from "starhermit:platform";
 import * as ui from "starhermit:ui";
-import { platformStrings } from "./classic.ts";
-import { initLanguage } from "./i18n.ts";
+import { initLanguage, T } from "./i18n.ts";
 import * as render from "./render.ts";
 import * as audio from "./audio.ts";
 import * as ai from "./ai.ts";
@@ -39,7 +38,7 @@ function applyPrefs(): void {
   render.setHighContrast(A.highContrast());
 }
 onPreferencesChange(applyPrefs);
-onSessionEnded(() => { app.notice = platformStrings().signedOut!; });
+onSessionEnded(() => { app.notice = T("starhermit.signedOut"); });
 
 let hidden = false;
 onSuspend(() => { hidden = true; audio.setSuspended(true); A.onSuspend(); platform.flush(); });

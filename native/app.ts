@@ -13,7 +13,7 @@
 // are deterministic in checks.
 import { clipboard, preferences } from "starhermit:engine";
 import * as ui from "starhermit:ui";
-import { Content, RNG, Rules, platformStrings, type Cfg, type Doc, type Rng, type State, type Theme } from "./classic.ts";
+import { Content, RNG, Rules, type Cfg, type Doc, type Rng, type State, type Theme } from "./classic.ts";
 import { N, T } from "./i18n.ts";
 import * as audio from "./audio.ts";
 import * as ai from "./ai.ts";
@@ -394,11 +394,10 @@ function postToLeaderboard(total: number): void {
   const s = session!;
   app.lbLine = null;
   if (!platform.signedIn() || s.aiLevel <= 0 || s.cfg.kind === "lesson") return;
-  const ps = platformStrings();
-  app.lbLine = ps.lbPosting!;
+  app.lbLine = T("starhermit.leaderboardPosting");
   void platform.postLeaderboard(total).then((r) => {
     if (session !== s) return;
-    app.lbLine = !r.posted ? ps.lbFailed! : r.rank ? ps.lbRank!.replace("{rank}", String(r.rank)) : ps.lbPosted!;
+    app.lbLine = !r.posted ? T("starhermit.leaderboardNotPosted") : r.rank ? T("starhermit.leaderboardRank", { rank: r.rank }) : T("starhermit.leaderboardPosted");
   });
 }
 
@@ -531,8 +530,7 @@ export function startDaily(): void {
 export function copyInvite(): void {
   const link = platform.inviteLink();
   if (!link) return;
-  const ps = platformStrings();
-  try { clipboard.writeText(link); app.notice = ps.inviteCopied!; } catch { app.notice = ps.inviteFailed!; }
+  try { clipboard.writeText(link); app.notice = T("starhermit.inviteCopied"); } catch { app.notice = T("starhermit.inviteFailed"); }
 }
 export function eraseProgress(): void {
   platform.resetDoc();

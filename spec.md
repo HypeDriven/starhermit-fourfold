@@ -36,7 +36,7 @@ File map (what the package and the tests load):
 | `js/content.js` | Player identities, 5 themes, 6 lessons, 42 journey stages, 5 practice presets, 7 challenges, daily generator, achievements, offline validator |
 | `js/ai.js` | Four AI levels and the hint search; deterministic per (state, level, seed) |
 | `js/store.js` | The progress document: defaults, forward merge, the old cloud text, `mergeStores` |
-| `js/i18n/strings.js`, `js/i18n/strings-content.js`, `js/i18n/core.js`, `js/platform-i18n.js` | Translation tables (nine locales), the DOM-free lookup, the account strings |
+| `assets/strings.json` | Translation tables (nine locales) for the engine's `strings`; account lines are its `starhermit.*` strings |
 | `assets/ui-style.json` (from `tools/ui-style.css`) | The UI styles converted with `starhermit css` (`npm run css`) |
 | `assets/key-art.webp`, `assets/results-win.webp`, `assets/results-lose.webp` | Title and results illustrations (FLUX.2 klein) |
 | `sfx/*.opus`, `sfx/manifest.txt` (canonical), `sfx/manifest.json`, `sfx/manifest.md` | 20 authored clips and their event bindings |
@@ -164,7 +164,7 @@ One screen shows at a time under the header bar (`▮ FOURFOLD` wordmark, the si
 
 | Tier (anchor level) | Shadows | AO | Bloom | Grade | AA | Reflections | Detail | Particles |
 |---|---|---|---|---|---|---|---|---|
-| Low (quantum) | off | off | off | off | MSAA | off | plain | off |
+| Low (quantum) | off | off | off | off | off | off | plain | off |
 | Balanced (molecular) | 1024 | off | ½ | on | FXAA | on | detailed | low (60) |
 | High (terrestrial) | 2048 | ½, 8 samples | ½ | on | SMAA | on | detailed | high (160) |
 | Ultra (galactic) | 4096 | full, 16 samples | full | on | MSAA | on | detailed | high |
@@ -217,8 +217,8 @@ Every cue has a visible counterpart (status line, HUD, results headline); nothin
 
 Every player-facing string ships in nine locales: **en-US, en-GB, es-419, es-ES, de-DE, fr-FR, fr-CA, pt-BR, it-IT**.
 
-- **Tables.** English source strings are the keys. `js/i18n/strings.js` (UI) and `js/i18n/strings-content.js` (player names, lessons, the 42 journey stage names and intros, practice opponents, challenges) hold rows of [English, es-419, de-DE, fr-FR, pt-BR, it-IT]; en-GB, es-ES and fr-CA list only their differences and otherwise fall back to en-US, es-419 and fr-FR. The account strings (sign-in, invite, confirmations, sign-out notice, leaderboard line) are `js/platform-i18n.js`'s. "Fourfold", "StarHermit" and key names stay as they are.
-- **Language.** The runtime's interface language (`preferences().language`: the player's choice in Options › Language, else the device's) picks the nearest shipped locale (`es-MX → es-419`, `en-AU → en-GB`, `fr → fr-FR`, `pt-PT → pt-BR`, others → en-US) through `js/i18n/core.js`; a change shows on the next frame (the UI is immediate mode) and a game in progress keeps its drops. The browser build's own Language selector, its `?lang=` override and the account's preferred-language lookup are the runtime's now.
+- **Tables.** English source strings are the keys. `assets/strings.json` holds the UI and the content (player names, lessons, the 42 journey stage names and intros, practice opponents, challenges) per locale; en-GB, es-ES and fr-CA list only their differences and otherwise fall back along the engine's locale chain. The account strings (sign-in, invite, confirmations, sign-out notice, leaderboard line) are the engine's `starhermit.*`. "Fourfold", "StarHermit" and key names stay as they are.
+- **Language.** The runtime's interface language (`preferences().language`: the player's choice in Options › Language, else the device's) picks the nearest shipped locale along the engine's locale chains (others → en-US); a change shows on the next frame (the UI is immediate mode) and a game in progress keeps its drops. The browser build's own Language selector, its `?lang=` override and the account's preferred-language lookup are the runtime's now.
 
 ## 11. Accessibility
 

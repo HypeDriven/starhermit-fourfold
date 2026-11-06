@@ -55,6 +55,7 @@ export const BUDGETS: Record<QualityTier, Budget> = {
 };
 export const PARTICLE_COUNT: Record<"off" | "low" | "high", number> = { off: 0, low: 60, high: 160 };
 export const MAX_PARTICLES = 480;
+export const SPARK_MAX = 256;
 /** The level whose settings are each tier's preset. */
 const ANCHOR: Record<QualityTier, GraphicsLevel> = { low: "quantum", balanced: "molecular", high: "terrestrial", ultra: "galactic" };
 

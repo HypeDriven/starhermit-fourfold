@@ -28,12 +28,12 @@ import {
   ACESFilmicToneMapping, AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, Color, ConeGeometry, CylinderGeometry,
   CircleGeometry, DataTexture, DirectionalLight, DynamicDrawUsage, ExtrudeGeometry, Group, HemisphereLight, InstancedMesh,
   LatheGeometry, LinearFilter, LinearMipmapLinearFilter, Matrix4, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial,
-  OctahedronGeometry, OrthographicCamera, PCFSoftShadowMap, PMREMGenerator, Path, PlaneGeometry, Points, PointsMaterial, RGBAFormat, RepeatWrapping,
+  OctahedronGeometry, OrthographicCamera, PCFSoftShadowMap, PMREMGenerator, Path, PlaneGeometry, ParticleEmitter, Points, PointsMaterial, RGBAFormat, RepeatWrapping,
   RoomEnvironment, Shape, ShadowMaterial, TorusGeometry, Vector2, Vector3, renderer, scene,
 } from "starhermit:scene";
 import type { Material, Texture } from "starhermit:scene";
 import type { State, Theme } from "./classic.ts";
-import { MAX_PARTICLES, PARTICLE_COUNT, type Look } from "./quality.ts";
+import { MAX_PARTICLES, PARTICLE_COUNT, SPARK_MAX, type Look } from "./quality.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
@@ -216,7 +216,8 @@ hoverBar.renderOrder = 2;
 hoverBar.visible = false;
 let ghost: Mesh;
 
-// Particles: landing puffs and win sparkles (additive, bright so they bloom).
+// Particles (additive, bright so they bloom). Landing puffs stay in this script pool: their flat
+// half-ring of velocities has no emitter equivalent (spread is a cone). Win sparkles are an emitter.
 const PMAX = MAX_PARTICLES;
 const pPos = new Float32Array(PMAX * 3), pCol = new Float32Array(PMAX * 3);
 const pState: { life: number; max: number; vx: number; vy: number; r: number; g: number; b: number }[] = [];
@@ -230,7 +231,17 @@ const points = new Points(pGeo, pMat);
 points.frustumCulled = false;
 points.renderOrder = 4;
 points.visible = false;
-let pNext = 0, sparkleAcc = 0;
+let pNext = 0, pAlive = 0, sparkleAcc = 0;
+const sparkMat = new PointsMaterial({ size: 8, sizeAttenuation: false, map: dotTex, transparent: true, depthWrite: false, blending: AdditiveBlending });
+/** Win sparkles: burst one by one at a point of the line, each in its disc's color. */
+const sparks = new ParticleEmitter({
+  capacity: SPARK_MAX, material: sparkMat, seed: 0xf04f, space: "local", life: [0.8, 1.4],
+  velocity: [0, 0.85, 0], velocitySpread: [0.15, 0.35, 0], gravity: [0, -0.4, 0],
+  opacity: [1, 0.73, 0.51, 0.33, 0.18, 0.08, 0.02, 0], // (1 − age)²; the color faded so on the additive dot
+});
+sparks.frustumCulled = false;
+sparks.renderOrder = 4;
+sparks.visible = false;
 
 let sockets: InstancedMesh | null = null;
 let holes: InstancedMesh | null = null;
@@ -249,7 +260,7 @@ function build(): void {
   renderer.toneMappingExposure = 1.1;
   renderer.shadowMap.type = PCFSoftShadowMap;
   scene.background = bg;
-  scene.add(key, key.target, fill, boardGroup, glow, wallShadow, points);
+  scene.add(key, key.target, fill, boardGroup, glow, wallShadow, points, sparks);
   buildRoundGeos(look ? look.budget.segments : 1);
   ghost = new Mesh(discGeo, ghostMat);
   ghost.renderOrder = 3;
@@ -435,6 +446,7 @@ function spawn(x: number, y: number, vx: number, vy: number, life: number, color
   tmpColor.setHex(color);
   s.r = tmpColor.r * gain; s.g = tmpColor.g * gain; s.b = tmpColor.b * gain;
   pPos[i * 3] = x; pPos[i * 3 + 1] = y; pPos[i * 3 + 2] = 0.6;
+  pAlive++;
 }
 function particleBudget(): number { return reduced || !look ? 0 : PARTICLE_COUNT[look.particles] || 0; }
 function discColor(p: number): number { return hc ? HC_DISC[p] ?? 0xffffff : COLORS[p] ?? 0xffffff; }
@@ -453,7 +465,8 @@ function landingPuff(k: number): void {
 }
 function stepParticles(dt: number): void {
   const budget = particleBudget();
-  points.visible = budget > 0 && visible;
+  sparks.visible = budget > 0 && visible;
+  points.visible = sparks.visible && pAlive > 0;
   if (!budget) return;
   // Win sparkles rise from the winning line while the board is decided.
   const line = snap?.terminal?.line;
@@ -464,13 +477,16 @@ function stepParticles(dt: number): void {
       const [c, r] = line[Math.floor(Math.random() * line.length)]!;
       const a = Math.random() * PI * 2, rad = DISC_R * (0.4 + Math.random() * 0.7);
       const pl = snap!.grid[c * L.rows + r] || 1;
-      spawn(L.x(c) + Math.cos(a) * rad, L.y(r) + Math.sin(a) * rad, (Math.random() - 0.5) * 0.3, 0.5 + Math.random() * 0.7, 0.8 + Math.random() * 0.6, discColor(pl), 2.4);
+      sparks.burst(1, [L.x(c) + Math.cos(a) * rad, L.y(r) + Math.sin(a) * rad, 0.6], { color: new Color(discColor(pl)).multiplyScalar(2.4) });
     }
   } else sparkleAcc = 0;
+  if (!pAlive) return;
+  pAlive = 0;
   for (let i = 0; i < PMAX; i++) {
     const s = pState[i]!;
     if (s.life <= 0) { pCol[i * 3] = pCol[i * 3 + 1] = pCol[i * 3 + 2] = 0; continue; }
     s.life -= dt;
+    pAlive++;
     s.vy -= 0.4 * dt;
     pPos[i * 3] = pPos[i * 3]! + s.vx * dt; pPos[i * 3 + 1] = pPos[i * 3 + 1]! + s.vy * dt;
     const f = Math.max(0, s.life / s.max);
@@ -482,6 +498,8 @@ function stepParticles(dt: number): void {
 }
 function clearParticles(): void {
   for (const s of pState) s.life = 0;
+  pAlive = 0;
+  sparks.clear();
   pCol.fill(0);
   (pGeo.attributes.color as BufferAttribute).needsUpdate = true;
 }
@@ -668,7 +686,7 @@ export function update(dtRaw: number, rect: Rect, W: number, H: number, paused: 
     const vw = rect.width / s, vh = rect.height / s;
     wallShadow.scale.set(vw + 2, vh + 2, 1);
     glow.scale.set(vw, vh, 1);   // fades to nothing at the region's edges
-    pMat.size = Math.max(4, 0.2 * s / Math.max(1, frameScale));
+    pMat.size = sparkMat.size = Math.max(4, 0.2 * s / Math.max(1, frameScale));
     // Shadow frustum fitted tightly around the board and its drop shadow (the page's fitShadow).
     const ext = Math.max(L.w, L.h) / 2 + 1.2;
     const sc = key.shadow.camera as OrthographicCamera;
@@ -678,6 +696,7 @@ export function update(dtRaw: number, rect: Rect, W: number, H: number, paused: 
     envMaps();
   }
   if (!paused && !reduced) time += dt;
+  sparks.paused = paused && !anims.size;
   if (!paused || anims.size) step(paused ? dt : dt, time);
   hoverBar.visible = visible && hover >= 0 && hover < L.cols && !!snap && !snap.terminal;
   if (hoverBar.visible) hoverBar.position.set(L.x(hover), 0, 0.45);

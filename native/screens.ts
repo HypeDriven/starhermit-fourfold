@@ -14,7 +14,7 @@
 import { frame, openMenu } from "starhermit:engine";
 import * as draw from "starhermit:draw";
 import * as ui from "starhermit:ui";
-import { Content, Rules, platformStrings } from "./classic.ts";
+import { Content, Rules } from "./classic.ts";
 import { N, T } from "./i18n.ts";
 import * as render from "./render.ts";
 import * as platform from "./platform.ts";
@@ -23,13 +23,12 @@ import { app } from "./app.ts";
 import { PAGE_BG } from "./style.ts";
 
 // ------------------------------------------------------------------ viewport and helpers
-let VW = 1280, VH = 720, SCALE = 1, SA = { top: 0, left: 0, right: 0, bottom: 0 };
+let VW = 1280, VH = 720, SCALE = 1, VX = 0, VY = 0;
 function measureViewport(): void {
-  const f = frame();
-  SCALE = ui.preferences().scale || 1;
-  SA = f.safeArea;
-  VW = Math.max(1, (f.width - SA.left - SA.right) / SCALE);
-  VH = Math.max(1, (f.height - SA.top - SA.bottom) / SCALE);
+  const v = ui.viewport!();
+  SCALE = v.scale; VX = v.x; VY = v.y;
+  VW = Math.max(1, v.width);
+  VH = Math.max(1, v.height);
 }
 const narrow = (): boolean => VW < 560;
 const shortLandscape = (): boolean => VH <= 500 && VW > VH;
@@ -69,12 +68,11 @@ function fieldset(id: string, legend: string, width: number, build: (w: number) 
 // ------------------------------------------------------------------ header
 const HEADER_H = 61;
 function header(): void {
-  const P = platformStrings();
   ui.row("app-header", () => {
     lbl("▮", "mark");
     ui.style("wordmark").label("FOURFOLD");
     if (platform.signedIn()) {
-      const name = platform.displayName() || P.signIn!;
+      const name = platform.displayName() || T("starhermit.signIn");
       ui.style("acct", { text: { overflow: "ellipsis" }, width: Math.min(260, VW * 0.38) }).label(name);
     }
     ui.spacer();
@@ -100,7 +98,6 @@ function back(): void {
 }
 
 function titleScreen(): void {
-  const P = platformStrings();
   screen("title", 840, (w) => {
     if (VH >= 560) ui.column("title-art", () => { /* the art is the box's background */ }, { width: w, height: Math.min(230, w * 9 / 16), style: "title-art-img" });
     ui.style("h2").heading(T("Make four in a row"));
@@ -119,8 +116,8 @@ function titleScreen(): void {
       if (card("learn", T("Learn"), T("Six short lessons"), cw)) A.go("learn");
     }, { columns: cols, gap, width: w, align: "stretch" });
     ui.row("account-row", () => {
-      if (!platform.signedIn()) { if (btn("signin", P.signIn!, "btn-ghost")) platform.signIn(); }
-      else if (platform.inviteLink()) { if (btn("invite", P.invite!, "btn-ghost")) A.copyInvite(); }
+      if (!platform.signedIn()) { if (btn("signin", T("starhermit.signIn"), "btn-ghost")) platform.signIn(); }
+      else if (platform.inviteLink()) { if (btn("invite", T("starhermit.invite"), "btn-ghost")) A.copyInvite(); }
     }, { spacing: 10 });
     if (app.notice) para(app.notice, w, "status");
   });
@@ -478,7 +475,7 @@ function resultsSheet(): void {
 // ------------------------------------------------------------------ frame
 export function drawScreens(): void {
   measureViewport();
-  ui.setViewport({ x: SA.left, y: SA.top, width: VW * SCALE, height: VH * SCALE });
+  ui.setViewport({ x: VX, y: VY, width: VW * SCALE, height: VH * SCALE });
   const playing = app.screen === "play" && !!A.session;
   if (playing && boardRect.width) {
     // The page around the board region (the scene shows through it alone).
