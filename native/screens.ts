@@ -26,7 +26,7 @@ import { PAGE_BG } from "./style.ts";
 let VW = 1280, VH = 720, SCALE = 1, VX = 0, VY = 0;
 function measureViewport(): void {
   const v = ui.viewport!();
-  SCALE = v.scale; VX = v.x; VY = v.y;
+  SCALE = v.scale; VX = v.x * SCALE; VY = v.y * SCALE; // window pixels, for ui.setViewport
   VW = Math.max(1, v.width);
   VH = Math.max(1, v.height);
 }

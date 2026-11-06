@@ -7,7 +7,7 @@ import { strings } from "starhermit:engine";
 import * as ui from "starhermit:ui";
 
 /** Translates an English source string ({name} placeholders from vars), or a `starhermit.*` key. */
-export function T(key: string, vars?: Record<string, string | number>): string { return strings.t(key, vars); }
+export function T(key: string, vars?: Record<string, string | number>): string { return strings.t(String(key), vars); }
 /** Marks English text translated where it is drawn (keeps the key visible to tests/i18n.test.mjs). */
 export const N = (key: string): string => key;
 export function lang(): string { return strings.locale; }

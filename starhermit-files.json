@@ -19,12 +19,12 @@
     "native/app.ts": {"sha256": "ce7d27ad4ff851ed3320ea4cb8d8cc7c81874d3150b093574bdf710c7ac8142f", "size": 21738},
     "native/audio.ts": {"sha256": "c580381153f7cdbb43d618e0fc869c336eb9d9d9c6afb2b94e4b9bf37e118374", "size": 3534},
     "native/classic.ts": {"sha256": "b87eabcfc73deaa55769f36a83fbff68a399547e36f301da7257733c6f775dfa", "size": 4339},
-    "native/i18n.ts": {"sha256": "d4570a0aecfab3f0ec72f666d9bf5240f215d3395c1aad675537a36d96b2ce08", "size": 1142},
+    "native/i18n.ts": {"sha256": "6b92d84f8a4f8918c74a7cdd3253e939bed425d7a367016392803feb9784368a", "size": 1150},
     "native/main.ts": {"sha256": "fe4ba4cf9bdf9d368a292aa41da9de4b71e5c840cbdb386c7eb41e1b4e7c86ec", "size": 4334},
     "native/platform.ts": {"sha256": "46acb91a76380b4155b9e02b8c78604dc834a2f4ebfbd731734be3b92d783435", "size": 7150},
     "native/quality.ts": {"sha256": "9b6b5f2e5a2e90c4276ea0772bb91a653113f5e332bd4a3890dc479935a38fce", "size": 3984},
     "native/render.ts": {"sha256": "e2bb747a5a17a262c7a88f7478c22c56b716cc92b8022c46aa6141da9fc46652", "size": 34546},
-    "native/screens.ts": {"sha256": "caf72570aadbb98ad91a79c610c8fd934d9b2186085adedf517a095ad536bc2f", "size": 26334},
+    "native/screens.ts": {"sha256": "e04f496432b3b466eedb4ef7f1db41aa330d1b1b1eca9a46e08698164f60fe8b", "size": 26387},
     "native/style.ts": {"sha256": "cc495a8884ebf083cf7925ab940d67f0d30a67a1d7e8725d763a4537989c4c88", "size": 2287},
     "score-script.js": {"sha256": "43a7483075588c2e38922030d62c73a946f9fbfd10697dd3aa6d14d8d01221b4", "size": 2486},
     "sfx/bad-column-knock.opus": {"sha256": "71aa3db61ce930096b7baecfd9ea9eaee8cc2e6199dcf1df01b3914f581d81f7", "size": 11801},
@@ -52,6 +52,6 @@
     "sfx/unknown-command-buzz.opus": {"sha256": "430a7887346282b9310de219cad864e1d98caa5d18650fe56b7263e25a92abff", "size": 20201},
     "starhermit.txt": {"sha256": "eed473d9ff75e3776d81b80266b708bfff9456b0523be13947efdbcbba7eda69", "size": 2355}
   },
-  "excluded": ["coverart.png", "package-lock.json", "package.json", "server.js", "spec.md", "tests/", "tools/", "tsconfig.json"],
+  "excluded": ["coverart.png", "node_modules/", "package-lock.json", "package.json", "server.js", "spec.md", "tests/", "tools/", "tsconfig.json"],
   "format": 1
 }
