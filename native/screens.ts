@@ -1,3 +1,7 @@
+import { localizedStyle as __l10nStyle } from "./l10n/font.ts";
+import { localizedDrawOptions as __l10nDrawOptions } from "./l10n/font.ts";
+// localization-runtime:attached
+import { openLocalizedOptions as __l10nOptions } from "./l10n/menu.ts";
 // Every screen, sheet and the board's HUD on starhermit:ui, drawn each frame
 // from the app's state (the browser build's index.html sections and the
 // layout rules of css/app.css): the header bar (wordmark, account name, Help
@@ -11,7 +15,20 @@
 // laid over the 3D board (role button, named "Column n, …" as the old
 // buttons' aria-labels), so pointer, touch, keyboard focus, Enter, the
 // gamepad and screen readers all drive the same targets.
-import { frame, openMenu } from "starhermit:engine";
+// Every screen, sheet and the board's HUD on starhermit:ui, drawn each frame
+// from the app's state (the browser build's index.html sections and the
+// layout rules of css/app.css): the header bar (wordmark, account name, Help
+// and Settings), one screen at a time below it in a centred column (840
+// logical px at most, the board's 720; 16 px padding, 12 under 560 px wide),
+// the pause and results sheets as modal dialogs over the board. The play
+// screen is HUD → board region → status line → tray; on phones the tray's
+// buttons pair up in two rows; on short landscape windows (≤ 500 px tall)
+// the board sits at the start with the HUD, status and tray in a column
+// beside it, as the old @media rules did. The board's columns are ui widgets
+// laid over the 3D board (role button, named "Column n, …" as the old
+// buttons' aria-labels), so pointer, touch, keyboard focus, Enter, the
+// gamepad and screen readers all drive the same targets.
+import { frame } from "starhermit:engine";
 import * as draw from "starhermit:draw";
 import * as ui from "starhermit:ui";
 import { Content, Rules } from "./classic.ts";
@@ -35,14 +52,14 @@ const shortLandscape = (): boolean => VH <= 500 && VW > VH;
 const hex = (n: number): string => "#" + (n >>> 0).toString(16).padStart(6, "0");
 const fmtTime = (ms: number): string => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 
-function lbl(text: string, cls = "text"): void { ui.style(cls).label(text); }
-function para(text: string, width: number, cls = "text"): void { ui.style(cls).paragraph(text, Math.max(40, width)); }
+function lbl(text: string, cls = "text"): void { ui.style(__l10nStyle(cls)).label(text); }
+function para(text: string, width: number, cls = "text"): void { ui.style(__l10nStyle(cls)).paragraph(text, Math.max(40, width)); }
 function textWidth(text: string, cls: string, kind: "button" | "label" = "button"): number {
   return ui.measureText(text, { kind, style: cls }).width / SCALE;
 }
 /** A button acknowledging with the menu tap (board columns and tray actions have their own cues). */
 function btn(id: string, label: string, cls: string, opts: ui.ButtonOptions = {}, width?: number, tap = true): boolean {
-  const s = width ? ui.style(cls, { width }) : ui.style(cls);
+  const s = width ? ui.style(__l10nStyle(cls), __l10nStyle({ width })) : ui.style(__l10nStyle(cls));
   const hit = s.id(id).button(label, opts);
   if (hit && tap) A.play("menu-tap");
   return hit;
@@ -50,12 +67,12 @@ function btn(id: string, label: string, cls: string, opts: ui.ButtonOptions = {}
 /** A menu card (the old <button class="card"> with a title and a smaller line). */
 function card(id: string, title: string, sub: string, width: number, opts: { mastery?: boolean; stars?: string; disabled?: boolean } = {}): boolean {
   const inner = width - 30;
-  const hit = ui.style(opts.mastery ? "card-mastery" : "card", { width }).id(id).button(title, {
+  const hit = ui.style(__l10nStyle(opts.mastery ? "card-mastery" : "card"), __l10nStyle({ width })).id(id).button(title, {
     disabled: opts.disabled,
     content: () => {
-      ui.style("card-title").paragraph(title, inner);
+      ui.style(__l10nStyle("card-title")).paragraph(title, inner);
       if (opts.stars != null) lbl(opts.stars, "card-stars");
-      if (sub) ui.style("card-sub").paragraph(sub, inner);
+      if (sub) ui.style(__l10nStyle("card-sub")).paragraph(sub, inner);
     },
   });
   if (hit) A.play("menu-tap");
@@ -70,10 +87,10 @@ const HEADER_H = 61;
 function header(): void {
   ui.row("app-header", () => {
     lbl("▮", "mark");
-    ui.style("wordmark").label("FOURFOLD");
+    ui.style(__l10nStyle("wordmark")).label("FOURFOLD");
     if (platform.signedIn()) {
       const name = platform.displayName() || T("starhermit.signIn");
-      ui.style("acct", { text: { overflow: "ellipsis" }, width: Math.min(260, VW * 0.38) }).label(name);
+      ui.style(__l10nStyle("acct"), __l10nStyle({ text: { overflow: "ellipsis" }, width: Math.min(260, VW * 0.38) })).label(name);
     }
     ui.spacer();
     if (btn("hdr-help", T("Help and rules"), "btn-icon", { content: () => lbl("?", "text") })) A.go("help");
@@ -100,7 +117,7 @@ function back(): void {
 function titleScreen(): void {
   screen("title", 840, (w) => {
     if (VH >= 560) ui.column("title-art", () => { /* the art is the box's background */ }, { width: w, height: Math.min(230, w * 9 / 16), style: "title-art-img" });
-    ui.style("h2").heading(T("Make four in a row"));
+    ui.style(__l10nStyle("h2")).heading(T("Make four in a row"));
     para(T("Drop a disc into a column; it falls to the lowest free cell. The first player to line up four — across, up, or diagonally — wins the board."), Math.min(w, 660), "lede");
     para(A.titleStats(), w, "status");
     const resume = A.resumeLabel();
@@ -125,7 +142,7 @@ function titleScreen(): void {
 
 function practiceScreen(): void {
   screen("practice", 840, (w) => {
-    ui.style("h2").heading(T("Play"));
+    ui.style(__l10nStyle("h2")).heading(T("Play"));
     para(T("Pick an opponent. Undo and hints are available; nothing here is ranked."), Math.min(w, 660), "lede");
     ui.column("practice-list", () => {
       for (const p of Content.PRACTICE) if (card(`practice-${p.id}`, T(p.name), T(p.blurb), w)) A.startSession("practice:" + p.id);
@@ -137,7 +154,7 @@ function practiceScreen(): void {
 function journeyScreen(): void {
   const store = A.doc();
   screen("journey", 840, (w) => {
-    ui.style("h2").heading(T("Journey"));
+    ui.style(__l10nStyle("h2")).heading(T("Journey"));
     para(T("Stars come from winning and from winning under par. Mastery stages (outlined) must be won before the stages after them open."), Math.min(w, 660), "lede");
     const gap = 8;
     const cols = Math.max(2, Math.floor((w + gap) / (112 + gap)));
@@ -160,7 +177,7 @@ function journeyScreen(): void {
 function challengesScreen(): void {
   const store = A.doc();
   screen("challenges", 840, (w) => {
-    ui.style("h2").heading(T("Challenges"));
+    ui.style(__l10nStyle("h2")).heading(T("Challenges"));
     para(T("Each challenge states its rules and assists before you commit."), Math.min(w, 660), "lede");
     ui.column("challenge-list", () => {
       for (const c of Content.CHALLENGES) {
@@ -175,7 +192,7 @@ function challengesScreen(): void {
 function learnScreen(): void {
   const store = A.doc();
   screen("learn", 840, (w) => {
-    ui.style("h2").heading(T("Learn"));
+    ui.style(__l10nStyle("h2")).heading(T("Learn"));
     para(T("Short lessons, replayable at any time."), Math.min(w, 660), "lede");
     ui.column("learn-list", () => {
       for (const l of Content.LESSONS) {
@@ -191,10 +208,10 @@ const SYNC_TEXT: Record<string, string> = {
 };
 function settingsScreen(): void {
   screen("settings", 840, (w) => {
-    ui.style("h2").heading(T("Settings"));
+    ui.style(__l10nStyle("h2")).heading(T("Settings"));
     fieldset("set-options", T("Options"), w, (iw) => {
       para(T("Sound, graphics, language, controls, reduced motion, high contrast and text size are in the StarHermit Options menu (F1)."), iw, "status");
-      if (btn("open-options", T("Open Options"), "btn-center")) openMenu();
+      if (btn("open-options", T("Open Options"), "btn-center")) __l10nOptions();
     });
     fieldset("set-a11y", T("Accessibility"), w, (iw) => {
       para(T("Disc colours are always reinforced by a shape: ● you, ◆ rival, ▲ third, ■ fourth."), iw, "status");
@@ -220,7 +237,7 @@ function settingsScreen(): void {
 
 function helpScreen(): void {
   screen("help", 840, (w) => {
-    ui.style("h2").heading(T("How to play"));
+    ui.style(__l10nStyle("h2")).heading(T("How to play"));
     para(T("Players take turns dropping a disc into a column. Each disc falls to the lowest free cell. The first player with four of their own discs in a straight line — horizontal, vertical, or diagonal — wins. If every cell fills with no line, it is a draw."), Math.min(w, 660), "lede");
     fieldset("help-controls", T("Controls"), w, (iw) => {
       for (const line of [
@@ -267,8 +284,8 @@ function hudPanel(w: number, compact: boolean): void {
         role: "none", size: { width: 24, height: 24 },
         draw: (r) => {
           draw.circle(r.x + r.width / 2, r.y + r.height / 2, r.width / 2, color);
-          const m = draw.measureText(icon, { size: 14 * SCALE });
-          draw.text(icon, r.x + r.width / 2, r.y + (r.height - m.height) / 2, { size: 14 * SCALE, color: "#06101f", align: "center" });
+          const m = draw.measureText(icon, __l10nDrawOptions({ size: 14 * SCALE }));
+          draw.text(icon, r.x + r.width / 2, r.y + (r.height - m.height) / 2, __l10nDrawOptions({ size: 14 * SCALE, color: "#06101f", align: "center" }));
         },
       });
     };
@@ -278,7 +295,7 @@ function hudPanel(w: number, compact: boolean): void {
     const metaW = meta.reduce((a, [k, v]) => a + textWidth(k, "meta", "label") + textWidth(v, "meta-b", "label") + 4 + 12, 0);
     const turnW = textWidth(turn, "turn", "label") + 32;
     if (compact || turnW + metaW > inner) {
-      ui.row("hud-turn", () => { chip(); ui.style("turn").paragraph(turn, inner - 32); }, { spacing: 8, align: "center", width: inner });
+      ui.row("hud-turn", () => { chip(); ui.style(__l10nStyle("turn")).paragraph(turn, inner - 32); }, { spacing: 8, align: "center", width: inner });
       ui.row("hud-meta", metaRow, { spacing: 12, align: "center" });
     } else {
       ui.row("hud-top", () => { chip(); lbl(turn, "turn"); ui.spacer(); metaRow(); }, { spacing: 8, align: "center", width: inner });
@@ -419,7 +436,7 @@ function pauseSheet(): void {
   const w = sheetWidth() - 36;
   const open = ui.dialog(T("Paused"), "", true, () => {
     ui.column("pause-sheet", () => {
-      ui.style("sheet-h").heading(T("Paused"));
+      ui.style(__l10nStyle("sheet-h")).heading(T("Paused"));
       if (btn("pause-resume", T("Resume"), "btn-primary", {}, w)) A.closePause();
       if (btn("pause-restart", T("Restart this board"), "btn", {}, w)) A.restart();
       if (btn("pause-settings", T("Settings"), "btn", {}, w)) A.pauseSettings();
@@ -450,7 +467,7 @@ function resultsSheet(): void {
     body(() => ui.column("results-sheet", () => {
       const art = head.cls === "win" ? "results-win-img" : head.cls === "loss" ? "results-lose-img" : null;
       if (art && VH >= 560) ui.column("results-art", () => { /* background */ }, { width: w, height: 140, style: art });
-      ui.style(head.cls === "win" ? "headline-win" : head.cls === "loss" ? "headline-loss" : "headline").paragraph(head.text, w);
+      ui.style(__l10nStyle(head.cls === "win" ? "headline-win" : head.cls === "loss" ? "headline-loss" : "headline")).paragraph(head.text, w);
       if (!s.lessonDone) {
         if (s.cfg.kind === "journey") { const n = Rules.starsFor(st); lbl("★".repeat(n) + "☆".repeat(3 - n), "stars"); }
         const comp = st.score.components;

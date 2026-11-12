@@ -1,3 +1,4 @@
+import { withLanguageRender as __l10nRender } from "./l10n/menu.ts";
 // Fourfold on the StarHermit engine: the entry module (starhermit.txt
 // engine.entry), played natively by the StarHermit client and in browsers by
 // the engine's web runtime. The rules, content, AI, seeded streams and the
@@ -105,10 +106,14 @@ onUpdate((dt) => {
   applyLook();
   applyPrefs();
 });
-onRender(() => {
+onRender(__l10nRender(() => {
   drawScreens();
   const f = frame();
   render.setFrameScale(ui.preferences().scale);
   render.setHover(app.overlay ? -1 : app.hoverCol);
   render.update(frameDt, boardRegion(), f.width, f.height, hidden || !!A.session?.paused);
-});
+}));
+
+// localization-runtime:menu
+import { installLanguageMenu as __installLanguageMenu } from "./l10n/menu.ts";
+__installLanguageMenu(false);

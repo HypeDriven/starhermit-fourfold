@@ -1,3 +1,5 @@
+// localization-runtime:attached
+import { setLocalizedStyles as __l10nStyles } from "./l10n/font.ts";
 // The look of the menus, HUD and sheets: the browser build's css/app.css,
 // rewritten class-based in tools/ui-style.css and converted once with
 // `starhermit css` into assets/ui-style.json (`npm run css`), registered at
@@ -13,7 +15,7 @@ export function initStyles(): void {
   const css = files.readJson("assets/ui-style.json") as unknown as ui.CssStyles;
   ui.setTokens(css.tokens);
   ui.setAnimations(css.animations);
-  ui.setStyles({
+  __l10nStyles({
     ...css.styles,
     label: { text: { color: "$ink" } },
     paragraph: { text: { color: "$ink" } },
