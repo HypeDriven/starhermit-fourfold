@@ -1,3 +1,4 @@
+import { bindings } from "starhermit:input";
 import { localizedStyle as __l10nStyle } from "./l10n/font.ts";
 import { localizedDrawOptions as __l10nDrawOptions } from "./l10n/font.ts";
 // localization-runtime:attached
@@ -490,7 +491,7 @@ function resultsSheet(): void {
 }
 
 // ------------------------------------------------------------------ frame
-export function drawScreens(): void {
+function drawScreensImmediate(): void {
   measureViewport();
   ui.setViewport({ x: VX, y: VY, width: VW * SCALE, height: VH * SCALE });
   const playing = app.screen === "play" && !!A.session;
@@ -519,4 +520,11 @@ export function drawScreens(): void {
     if (app.overlay === "pause") pauseSheet();
     else if (app.overlay === "results") resultsSheet();
   }
+}
+
+export function drawScreens(): void {
+  if (app.screen !== "help") { drawScreensImmediate(); return; }
+  const actions = ["col_left","col_right","col1","col2","col3","col4","col5","col6","col7","col8","col9","undo","hint","restart","pause","back"];
+  const version = JSON.stringify([(app as any).settings ?? (app as any).options ?? {}, (platform as any).options ?? {}, actions.map((action) => bindings(action))]);
+  ui.retain!("help-screen", version, drawScreensImmediate);
 }

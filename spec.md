@@ -1,6 +1,6 @@
 # Fourfold — Game Design Document (running spec)
 
-**Status:** running specification. Present tense; describes the game as it ships: a StarHermit engine script game (engine 1.39.0, host API 1.39), played natively by the StarHermit client and in browsers by the engine's web runtime. Design intent that the code does not yet implement is collected in the final section only.
+**Status:** running specification. Present tense; describes the game as it ships: a StarHermit engine script game (engine 1.44.1, host API 1.44), played natively by the StarHermit client and in browsers by the engine's web runtime. Design intent that the code does not yet implement is collected in the final section only.
 
 ## 1. Overview
 
@@ -20,7 +20,7 @@ File map (what the package and the tests load):
 
 | Path | Responsibility |
 |---|---|
-| `starhermit.txt` | Manifest: name, owner, `server=score-script.js`, cover, `launch=index.html`, `engine.api=1`, `engine.entry=native/main.ts`, `engine.version=1.39.0`, `engine.minor=39`, `engine.capabilities=platform,storage,clipboard`, `control.*` and `engine.gamepad.*` per action |
+| `starhermit.txt` | Manifest: name, owner, `server=score-script.js`, cover, `launch=index.html`, `engine.api=1`, `engine.entry=native/main.ts`, `engine.version=1.44.1`, `engine.minor=44`, `engine.capabilities=platform,storage,clipboard`, `control.*` and `engine.gamepad.*` per action |
 | `index.html`, `starhermit-files.json` | The engine's web loader and the package's file index (written by `npm run package`; never edited) |
 | `native/main.ts` | Entry: lifecycle (start, suspend, resume, quit), actions (keys and pads), the frame (look per graphics tier, preferences, audio, screens, board) |
 | `native/app.ts` | Controller: screen state, sessions (start from a stable key, replay a saved log), the game clock, the AI turn, undo, hints, restart, resign, lessons, results, progression, achievements, the resumable save, the status line |
@@ -304,3 +304,11 @@ No 3D model is used: discs and slab are procedural so themes can recolour them.
 The string tables include complete regional variants for `fr-BE`, `de-BE`, `en-SG`, `en-HK`, `en-BQ`, `es-CO`, `de-IT`, `fr-IT`, `es-CL`, `es-AR`, `es-EC`, `de-BR`. These reuse the corresponding existing translations in their language family. The runtime can resolve the exact regional tag. Language selection is available from the game’s Options panel or F2 and is saved per player in `ui.language`. Changes apply during play. Additional national, regional and indigenous language packs are only shipped once every English message has a translation with intact placeholders and markup. Complete additional language tables: `ja-JP`, `nl-BE`, `zh-SG`, `ms-SG`, `ta-SG`, `zh-HK`, `yue-HK`, `nl-NL`, `fi-FI`, `sv-FI`, `et-EE`, `id-ID`, `vi-VN`, `da-DE`, `lb-BE`, `eu-FR`, `ca-FR`, `oc-FR`, `sl-IT`, `fur-IT`, `ca-IT`, `oc-IT`, `ru-FI`, `ca-ES`, `eu-ES`, `gl-ES`, `ru-EE`, `su-ID`, `km-VN`, `co-FR`, `bew-ID`.
 
 <!-- regional-localization:end -->
+
+Cosmetic particle emitters use native GPU particles with automatic CPU fallback on devices or graphics tiers without GPU particle support.
+
+## Engine 1.44.1
+
+Browser play uses the WebGPU-only StarHermit 1.44.1 web runtime. Automatic ray-traced shadows are enabled on supported Vulkan devices, with mapped-shadow fallbacks elsewhere. Packaging creates block-compressed runtime textures and compressed glTF copies, retaining original image fallbacks.
+
+The help screen replays through retained native UI while its contents, options, layout and key bindings are unchanged.

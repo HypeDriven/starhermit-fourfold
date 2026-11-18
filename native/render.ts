@@ -25,12 +25,9 @@
 //   convention). The frosted plate's bump, the light pool and the particle
 //   dot are DataTextures computed once (the old ones were canvas textures).
 import {
-  ACESFilmicToneMapping, AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, Color, ConeGeometry, CylinderGeometry,
-  CircleGeometry, DataTexture, DirectionalLight, DynamicDrawUsage, ExtrudeGeometry, Group, HemisphereLight, InstancedMesh,
-  LatheGeometry, LinearFilter, LinearMipmapLinearFilter, Matrix4, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial,
-  OctahedronGeometry, OrthographicCamera, PCFSoftShadowMap, PMREMGenerator, Path, PlaneGeometry, ParticleEmitter, Points, PointsMaterial, RGBAFormat, RepeatWrapping,
-  RoomEnvironment, Shape, ShadowMaterial, TorusGeometry, Vector2, Vector3, renderer, scene,
+  ACESFilmicToneMapping, AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, Color, ConeGeometry, CylinderGeometry, CircleGeometry, DataTexture, DirectionalLight, DynamicDrawUsage, ExtrudeGeometry, Group, HemisphereLight, InstancedMesh, LatheGeometry, LinearFilter, LinearMipmapLinearFilter, Matrix4, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial, OctahedronGeometry, OrthographicCamera, PCFSoftShadowMap, PMREMGenerator, Path, PlaneGeometry, Points, PointsMaterial, RGBAFormat, RepeatWrapping, RoomEnvironment, Shape, ShadowMaterial, TorusGeometry, Vector2, Vector3, renderer, scene,
 } from "starhermit:scene";
+import { GPUParticleEmitter } from "starhermit:particles";
 import type { Material, Texture } from "starhermit:scene";
 import type { State, Theme } from "./classic.ts";
 import { MAX_PARTICLES, PARTICLE_COUNT, SPARK_MAX, type Look } from "./quality.ts";
@@ -234,7 +231,7 @@ points.visible = false;
 let pNext = 0, pAlive = 0, sparkleAcc = 0;
 const sparkMat = new PointsMaterial({ size: 8, sizeAttenuation: false, map: dotTex, transparent: true, depthWrite: false, blending: AdditiveBlending });
 /** Win sparkles: burst one by one at a point of the line, each in its disc's color. */
-const sparks = new ParticleEmitter({
+const sparks = new GPUParticleEmitter({
   capacity: SPARK_MAX, material: sparkMat, seed: 0xf04f, space: "local", life: [0.8, 1.4],
   velocity: [0, 0.85, 0], velocitySpread: [0.15, 0.35, 0], gravity: [0, -0.4, 0],
   opacity: [1, 0.73, 0.51, 0.33, 0.18, 0.08, 0.02, 0], // (1 − age)²; the color faded so on the additive dot
