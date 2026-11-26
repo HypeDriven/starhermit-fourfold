@@ -1,6 +1,6 @@
 # Fourfold — Game Design Document (running spec)
 
-**Status:** running specification. Present tense; describes the game as it ships: a StarHermit engine script game (engine 1.47.0, host API 1.47), played natively by the StarHermit client and in browsers by the engine's web runtime. Design intent that the code does not yet implement is collected in the final section only.
+**Status:** running specification. Present tense; describes the game as it ships: a StarHermit engine script game (engine 1.50.0, host API 1.50), played natively by the StarHermit client and in browsers by the engine's web runtime. Design intent that the code does not yet implement is collected in the final section only.
 
 ## 1. Overview
 
@@ -20,7 +20,7 @@ File map (what the package and the tests load):
 
 | Path | Responsibility |
 |---|---|
-| `starhermit.txt` | Manifest: name, owner, `server=score-script.js`, cover, `launch=index.html`, `engine.api=1`, `engine.entry=native/main.ts`, `engine.version=1.47.0`, `engine.minor=47`, `engine.capabilities=platform,storage,clipboard`, `control.*` and `engine.gamepad.*` per action |
+| `starhermit.txt` | Manifest: name, owner, `server=score-script.js`, cover, `launch=index.html`, `engine.api=1`, `engine.entry=native/main.ts`, `engine.version=1.50.0`, `engine.minor=50`, `engine.capabilities=platform,storage,clipboard`, `control.*` and `engine.gamepad.*` per action |
 | `index.html`, `starhermit-files.json` | The engine's web loader and the package's file index (written by `npm run package`; never edited) |
 | `native/main.ts` | Entry: lifecycle (start, suspend, resume, quit), actions (keys and pads), the frame (look per graphics tier, preferences, audio, screens, board) |
 | `native/app.ts` | Controller: screen state, sessions (start from a stable key, replay a saved log), the game clock, the AI turn, undo, hints, restart, resign, lessons, results, progression, achievements, the resumable save, the status line |
@@ -307,9 +307,9 @@ The string tables include complete regional variants for `fr-BE`, `de-BE`, `en-S
 
 Cosmetic particle emitters use native GPU particles with automatic CPU fallback on devices or graphics tiers without GPU particle support.
 
-## Engine 1.47.0
+## Engine 1.50.0
 
-Browser play uses the WebGPU-only StarHermit 1.47.0 web runtime. Automatic ray-traced shadows are enabled on supported Vulkan devices, with mapped-shadow fallbacks elsewhere. Packaging creates block-compressed runtime textures and compressed glTF copies, retaining original image fallbacks.
+Browser play uses the WebGPU-only StarHermit 1.50.0 web runtime. Automatic ray-traced shadows are enabled on supported Vulkan devices, with mapped-shadow fallbacks elsewhere. Packaging creates block-compressed runtime textures and compressed glTF copies, retaining original image fallbacks.
 
 The help screen replays through retained native UI while its contents, options, layout and key bindings are unchanged.
 
