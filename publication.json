@@ -12,7 +12,7 @@
     "metadataSource": "starhermit.txt",
     "createdAt": "2026-09-01T07:01:00.390692+00:00",
     "coverArtSource": "manifest",
-    "coverArtUpdatedAt": "2026-11-23T17:01:45.614434+00:00",
+    "coverArtUpdatedAt": "2026-11-26T14:18:04.153882+00:00",
     "submittedByUserId": "2712e04e-461b-4d23-81ae-e40b429128a8",
     "submittedByUsername": "starhermit",
     "hosting": {
@@ -22,9 +22,9 @@
       "pinnedCommitSha": null,
       "deployedCommitSha": null,
       "deployError": null,
-      "deployedAt": "2026-11-23T17:01:45.603952+00:00",
+      "deployedAt": "2026-11-26T14:18:04.136666+00:00",
       "externalLaunchUrl": null,
-      "engineVersion": "1.47.0",
+      "engineVersion": "1.50.0",
       "deployWarning": null
     },
     "description": "Drop discs into a vertical board and connect four in a row before your opponent does.",
@@ -36,19 +36,19 @@
     "links": [],
     "isDisabled": false
   },
-  "publishedAt": "2026-11-23T17:01:45.720Z",
-  "sourceCommit": "6851a8ba56bfe146fc291eef1d94e9267e87745e",
-  "bytesReceived": 2766348,
-  "archiveSha256": "50dd8916beb273c8ede07f0a602e6a3bb2bf40f976e90231fbc1fc174b4e4205",
+  "publishedAt": "2026-11-26T14:18:03.304Z",
+  "sourceCommit": "98a05068cb5d3da710d44b21a72ba722f800cb5d",
+  "bytesReceived": 2766360,
+  "archiveSha256": "247189049dde55758c5f4cbacae0bfce91735382fff6d76231d6f0081a111552",
   "indexSha256": "1fda2c3b47bf559beaba7eaddb776271b93fcf1edb158b5521da76682710a254",
   "result": {
     "clientPublished": true,
     "serverImageLoaded": false,
     "imageDigest": null,
-    "bytesReceived": 2766348,
+    "bytesReceived": 2766360,
     "mode": "replace",
     "filesRemoved": 0,
-    "engineVersion": "1.47.0",
+    "engineVersion": "1.50.0",
     "deployWarning": null
   },
   "liveVerification": {
