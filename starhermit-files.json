@@ -47,7 +47,7 @@
     "native/render.ts": {"sha256": "6c9e4079a87da1546f3d7f16d8ace9f5a7e7f3410553e1b90ea4d6ad59dfadc6", "size": 34714},
     "native/screens.ts": {"sha256": "67d2a8e9a963555ed016911e22b1972a63a8bcec83673b2ec06b6f9739e283c1", "size": 28441},
     "native/style.ts": {"sha256": "9fb07cf622af35e9ba4b19900a072bcc61e22fa7448b980b178cb58c24ca282c", "size": 2389},
-    "publication.json": {"sha256": "e033f8875b598ec2ac961a3bd33025eb115b7b58ef3464c92a34523817da69c3", "size": 4106},
+    "publication.json": {"sha256": "3613a789a7437ca247145287daf3488913e0044325d36c837be5843b3ef30a77", "size": 4106},
     "score-script.js": {"sha256": "43a7483075588c2e38922030d62c73a946f9fbfd10697dd3aa6d14d8d01221b4", "size": 2486},
     "sfx/bad-column-knock.opus": {"sha256": "71aa3db61ce930096b7baecfd9ea9eaee8cc2e6199dcf1df01b3914f581d81f7", "size": 11801},
     "sfx/banned-column-rattle.opus": {"sha256": "6eeb5392de0fb11ec15865f06e0c50490812e0ec6e0145ddf23bb46a82253255", "size": 21734},
